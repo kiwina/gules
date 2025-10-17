@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo.svg" alt="Gules Logo" width="200"/>
+  <img src=".github/logo.svg" alt="Gules Logo" width="200"/>
   
   # Gules - Complete Jules AI Toolkit
   
