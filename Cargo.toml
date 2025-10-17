@@ -1,0 +1,21 @@
+[workspace]
+members = [
+    "crates/jules-rs",
+    "crates/jules-core",
+    "crates/jules-cli",
+    "crates/jules-mcp",
+    "crates/gules",
+]
+resolver = "2"
+
+[workspace.package]
+authors = ["Kiwina <kiwina@example.com>"]
+license = "MIT"
+repository = "https://github.com/kiwina/gules"
+edition = "2021"
+
+[workspace.dependencies]
+jules-rs = { path = "crates/jules-rs", version = "0.1.0" }
+jules-core = { path = "crates/jules-core", version = "0.1.0" }
+jules-cli = { path = "crates/jules-cli", version = "0.1.0" }
+jules-mcp = { path = "crates/jules-mcp", version = "0.1.0" }

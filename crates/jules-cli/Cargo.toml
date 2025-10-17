@@ -1,0 +1,23 @@
+[package]
+name = "jules-cli"
+version = "0.1.0"
+edition = "2021"
+description = "Basic CLI commands for Google's Jules AI coding agent"
+authors = ["Kiwina <kiwina@example.com>"]
+license = "MIT"
+repository = "https://github.com/kiwina/gules"
+homepage = "https://github.com/kiwina/gules/tree/main/crates/jules-cli"
+documentation = "https://docs.rs/jules-cli"
+keywords = ["jules", "ai", "cli", "coding-agent"]
+categories = ["command-line-utilities"]
+readme = "README.md"
+
+[lib]
+name = "jules_cli"
+path = "src/lib.rs"
+
+[dependencies]
+jules-rs = { path = "../jules-rs", version = "0.1.0" }
+jules-core = { path = "../jules-core", version = "0.1.0" }
+clap = { version = "4.4", features = ["derive"] }
+anyhow = "1.0"

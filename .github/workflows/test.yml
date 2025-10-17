@@ -1,0 +1,162 @@
+name: Test
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Run tests (all features)
+      run: cargo test --all
+
+    - name: Test jules-cli (pure SDK CLI)
+      run: cargo test -p jules-cli
+
+    - name: Test jules-mcp (pure SDK MCP)
+      run: cargo test -p jules-mcp
+
+    - name: Test gules (CLI only, default)
+      run: cargo test -p gules
+
+    - name: Test gules with mcp feature
+      run: cargo test -p gules --features mcp
+
+    - name: Test gules with extended-mcp feature
+      run: cargo test -p gules --features extended-mcp
+
+  build:
+    name: Build All Configurations
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build jules-cli (pure SDK CLI)
+      run: cargo build -p jules-cli --release
+
+    - name: Build jules-mcp (pure SDK MCP)
+      run: cargo build -p jules-mcp --release
+
+    - name: Build gules (CLI only, default)
+      run: cargo build -p gules --release
+
+    - name: Build gules with mcp feature
+      run: cargo build -p gules --features mcp --release
+
+    - name: Build gules with extended-mcp feature
+      run: cargo build -p gules --features extended-mcp --release
+
+    - name: Verify binary sizes
+      run: |
+        ls -lh target/release/jules-cli target/release/jules-mcp target/release/gules || true
+        echo "Build configurations verified successfully!"
+
+  clippy:
+    name: Clippy (Linting)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
+
+    - name: Run clippy (all crates, all features)
+      run: cargo clippy --all --all-features -- -D warnings
+
+    - name: Run clippy (gules default)
+      run: cargo clippy -p gules -- -D warnings
+
+    - name: Run clippy (gules with mcp)
+      run: cargo clippy -p gules --features mcp -- -D warnings
+
+    - name: Run clippy (gules with extended-mcp)
+      run: cargo clippy -p gules --features extended-mcp -- -D warnings
+
+  fmt:
+    name: Rustfmt (Formatting)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
+
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Build documentation
+      run: cargo doc --no-deps --all --all-features
+      env:
+        RUSTDOCFLAGS: "-D warnings"
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Run cargo-audit
+      uses: rustsec/audit-check@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}

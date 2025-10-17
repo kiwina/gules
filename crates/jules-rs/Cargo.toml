@@ -1,0 +1,26 @@
+[package]
+name = "jules-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Rust SDK for Google's Jules AI coding agent API"
+authors = ["Kiwina <kiwina@example.com>"]
+license = "MIT"
+repository = "https://github.com/kiwina/gules"
+homepage = "https://github.com/kiwina/gules/tree/main/crates/jules-rs"
+documentation = "https://docs.rs/jules-rs"
+keywords = ["jules", "ai", "api", "sdk", "coding-agent"]
+categories = ["api-bindings", "development-tools"]
+readme = "README.md"
+
+[dependencies]
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
+chrono = "0.4"
+urlencoding = "2.1"
+
+[dev-dependencies]
+mockito = "1.2"
+tokio-test = "0.4"
