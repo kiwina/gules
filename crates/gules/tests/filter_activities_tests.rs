@@ -190,7 +190,7 @@ fn test_activity_with_bash_output() {
         bash_output: Some(BashOutput {
             command: "cargo test".to_string(),
             output: "test failed".to_string(),
-            exit_code: 1,
+            exit_code: Some(1),
         }),
     });
 
@@ -318,7 +318,7 @@ fn test_bash_output_filtering_logic() {
         bash_output: Some(BashOutput {
             command: "npm test".to_string(),
             output: "FAIL: 1 test failed".to_string(),
-            exit_code: 1,
+            exit_code: Some(1),
         }),
     });
 

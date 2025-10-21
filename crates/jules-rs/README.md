@@ -159,7 +159,24 @@ cargo test
 
 # Run with integration tests (requires API key)
 cargo test --features integration-tests
+
+# Optional: Validate with real API response data
+# Place activities.json in project root and run:
+cargo test --package jules-rs quick_validate -- --nocapture
+# Note: Delete activities.json after testing (contains private data)
 ```
+
+### Validation Test
+
+The `quick_validate.rs` test provides comprehensive validation of type definitions against real API responses:
+
+- **Purpose**: Ensures all Activity types correctly deserialize real API data
+- **Usage**: Place an `activities.json` file (from `list_activities` API response) in the project root
+- **Safety**: Test automatically skips if file not present
+- **Output**: Detailed statistics about activity types, artifacts, and optional fields
+- **Security**: Always delete `activities.json` after testing (contains private session data)
+
+This test discovered that `BashOutput.exit_code` is optional in the API response, preventing deserialization failures in production.
 
 ## 📋 Error Handling
 

@@ -85,4 +85,3 @@ fn test_merge_activities_sorting() {
 // These are better tested through integration tests or manual testing.
 //
 // The core logic (merge_activities, deduplication, sorting) is tested above.
-

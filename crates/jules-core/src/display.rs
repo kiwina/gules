@@ -368,11 +368,14 @@ pub fn display_artifact_summary(artifact: &Artifact) {
         } else {
             bash.command.clone()
         };
+        let exit_status = bash.exit_code
+            .map(|c| format!("{}", c))
+            .unwrap_or_else(|| "unknown".to_string());
         println!(
             "  {} {} (exit: {})",
             "🐚".cyan(),
             cmd_preview,
-            bash.exit_code
+            exit_status
         );
     }
 

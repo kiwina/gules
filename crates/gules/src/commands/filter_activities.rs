@@ -198,7 +198,10 @@ fn display_activities(activities: &[Activity], format: OutputFormat) -> Result<(
                         if let Some(bash) = &artifact.bash_output {
                             println!("    Type: Bash Output");
                             println!("    Command: {}", bash.command);
-                            println!("    Exit Code: {}", bash.exit_code);
+                            let exit_status = bash.exit_code
+                                .map(|c| c.to_string())
+                                .unwrap_or_else(|| "unknown".to_string());
+                            println!("    Exit Code: {}", exit_status);
                             println!("    Output:");
                             println!("    {}", bash.output.lines().collect::<Vec<_>>().join("\n    "));
                         }

@@ -177,8 +177,8 @@ pub struct Media {
 pub struct BashOutput {
     pub command: String,
     pub output: String,
-    #[serde(rename = "exitCode")]
-    pub exit_code: i32,
+    #[serde(rename = "exitCode", skip_serializing_if = "Option::is_none", default)]
+    pub exit_code: Option<i32>,
 }
 
 /// List activities response
