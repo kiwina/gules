@@ -2,7 +2,7 @@
 
 use chrono::Utc;
 use jules_core::activity_cache::*;
-use jules_rs::types::activity::{Activity, ListActivitiesResponse};
+use jules_rs::types::activity::Activity;
 
 /// Helper to create a test activity
 fn create_test_activity(id: &str, session_failed: bool) -> Activity {

@@ -14,6 +14,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+/// Maximum number of activities to fetch from API
+const MAX_ACTIVITIES_TO_FETCH: usize = 100;
+/// Page size for API pagination
+const ACTIVITIES_PAGE_SIZE: u32 = 50;
+
 /// Cache configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ActivityCacheConfig {
@@ -144,10 +149,15 @@ pub fn save_session_cache(cache: &SessionCache) -> Result<()> {
     metadata.access_order.push(cache.session_id.clone());
 
     // FIFO eviction if needed
-    while metadata.access_order.len() > metadata.config.max_sessions {
-        if let Some(oldest_session) = metadata.access_order.first().cloned() {
-            delete_session_cache(&oldest_session)?;
-            metadata.access_order.remove(0);
+    if metadata.access_order.len() > metadata.config.max_sessions {
+        let to_remove_count = metadata.access_order.len() - metadata.config.max_sessions;
+        let evicted_sessions: Vec<String> = metadata.access_order.drain(..to_remove_count).collect();
+        for session_id in evicted_sessions {
+            let cache_path = get_session_cache_path(&session_id)?;
+            if cache_path.exists() {
+                fs::remove_file(&cache_path)
+                    .context(format!("Failed to delete evicted cache for session {}", session_id))?;
+            }
         }
     }
 
@@ -286,7 +296,7 @@ pub fn update_cache_incremental(
     Ok(cache)
 }
 
-/// Fetch all activities with pagination (up to 100 max)
+/// Fetch all activities with pagination (up to MAX_ACTIVITIES_TO_FETCH)
 pub async fn fetch_all_activities(
     client: &jules_rs::JulesClient,
     session_id: &str,
@@ -294,10 +304,10 @@ pub async fn fetch_all_activities(
     let mut all_activities = Vec::new();
     let mut page_token: Option<String> = None;
 
-    // Fetch up to 100 activities total
-    while all_activities.len() < 100 {
+    // Fetch up to MAX_ACTIVITIES_TO_FETCH activities total
+    while all_activities.len() < MAX_ACTIVITIES_TO_FETCH {
         let response = client
-            .list_activities(session_id, Some(50), page_token.as_deref())
+            .list_activities(session_id, Some(ACTIVITIES_PAGE_SIZE), page_token.as_deref())
             .await?;
 
         all_activities.extend(response.activities);

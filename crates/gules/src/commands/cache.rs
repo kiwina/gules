@@ -17,8 +17,8 @@ pub async fn handle_cache_stats() -> Result<()> {
     println!("Sessions: {}/{}", stats.total_sessions, stats.max_sessions);
     println!("Total Activities: {}", stats.total_activities);
     println!(
-        "Disk Usage: {:.2} MB",
-        stats.total_size_bytes as f64 / 1_024_000.0
+        "Disk Usage: {:.2} MiB",
+        stats.total_size_bytes as f64 / 1_048_576.0
     );
 
     if stats.total_sessions > 0 {
@@ -26,14 +26,22 @@ pub async fn handle_cache_stats() -> Result<()> {
         println!("Cached Sessions:");
         let sessions = list_cached_sessions()?;
         for (i, session_id) in sessions.iter().enumerate() {
-            if let Ok(Some(cache)) = load_session_cache(session_id) {
-                println!(
-                    "  {}. {} ({} activities, updated {})",
-                    i + 1,
-                    session_id,
-                    cache.activities.len(),
-                    cache.last_updated.format("%Y-%m-%d %H:%M")
-                );
+            match load_session_cache(session_id) {
+                Ok(Some(cache)) => {
+                    println!(
+                        "  {}. {} ({} activities, updated {})",
+                        i + 1,
+                        session_id,
+                        cache.activities.len(),
+                        cache.last_updated.format("%Y-%m-%d %H:%M")
+                    );
+                }
+                Ok(None) => {
+                    // File deleted but metadata not yet updated - safe to ignore
+                }
+                Err(e) => {
+                    eprintln!("Warning: Failed to load cache for session {}: {}", session_id, e);
+                }
             }
         }
     }

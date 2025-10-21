@@ -5,7 +5,13 @@ use jules_rs::types::activity::*;
 
 #[test]
 fn quick_validate_activities_json() {
-    let json = std::fs::read_to_string("../../activities.json");
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("activities.json");
+    let json = std::fs::read_to_string(path);
     
     if json.is_err() {
         println!("⚠️  Skipping - activities.json not found");

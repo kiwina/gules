@@ -8,4 +8,3 @@ pub mod filter_activities;
 
 // Re-export command handlers
 pub use cache::*;
-pub use filter_activities::*;

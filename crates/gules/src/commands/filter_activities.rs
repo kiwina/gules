@@ -110,7 +110,7 @@ pub async fn filter_activities(
 
     // Take last N
     if let Some(n) = last_n {
-        filtered = filtered.into_iter().take(n).collect();
+        filtered.truncate(n);
     }
 
     // Display results

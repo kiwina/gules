@@ -1,7 +1,6 @@
 //! Tests for filter_activities command.
 
 use jules_rs::types::activity::*;
-use chrono::Utc;
 
 // Import the filter module functions
 use gules::commands::filter_activities::*;
