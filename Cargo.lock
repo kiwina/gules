@@ -965,6 +965,7 @@ dependencies = [
  "jules-rs",
  "serde",
  "serde_json",
+ "tempfile",
  "toml",
 ]
 

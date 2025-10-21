@@ -13,6 +13,7 @@
 use clap::{Parser, Subcommand};
 use jules_cli::commands::*;
 
+mod commands;
 mod extended_commands;
 
 #[cfg(feature = "mcp")]
@@ -187,6 +188,33 @@ enum Commands {
         #[arg(short, long, default_value = "30")]
         interval: u64,
     },
+    /// Filter and search session activities with caching
+    FilterActivities {
+        /// Session ID to filter activities for
+        #[arg(value_name = "SESSION_ID")]
+        session_id: String,
+        /// Get only the last N activities
+        #[arg(long, value_name = "N")]
+        last: Option<usize>,
+        /// Filter by activity type (comma-separated)
+        /// Types: agent-message, user-message, plan, progress, completed, failed, error
+        #[arg(long, value_name = "TYPES", value_delimiter = ',')]
+        r#type: Vec<String>,
+        /// Filter activities with bash output (test errors, command outputs)
+        #[arg(long)]
+        has_bash_output: bool,
+        /// Disable cache and fetch fresh from API
+        #[arg(long)]
+        no_cache: bool,
+        /// Output format: table, json, full, content-only
+        #[arg(long, default_value = "table", value_name = "FORMAT")]
+        format: String,
+    },
+    /// Manage activity cache
+    Cache {
+        #[command(subcommand)]
+        action: CacheCommands,
+    },
 }
 
 #[derive(Subcommand)]
@@ -201,6 +229,20 @@ enum ConfigCommands {
         key: String,
         /// Value to set
         value: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum CacheCommands {
+    /// Show cache statistics
+    Stats,
+    /// Clear all cached activities
+    Clear,
+    /// Delete cache for a specific session
+    Delete {
+        /// Session ID to delete cache for
+        #[arg(value_name = "SESSION_ID")]
+        session_id: String,
     },
 }
 
@@ -327,6 +369,47 @@ async fn main() -> anyhow::Result<()> {
         Some(Commands::Monitor { interval }) => {
             extended_commands::handle_monitor(interval).await?;
         }
+        Some(Commands::FilterActivities {
+            session_id,
+            last,
+            r#type,
+            has_bash_output,
+            no_cache,
+            format,
+        }) => {
+            use commands::filter_activities::*;
+
+            // Parse type filters
+            let type_filters: Result<Vec<ActivityTypeFilter>, _> = r#type
+                .iter()
+                .map(|s| ActivityTypeFilter::from_str(s))
+                .collect();
+            let type_filters = type_filters?;
+
+            // Parse output format
+            let output_format = OutputFormat::from_str(&format)?;
+
+            filter_activities(
+                &session_id,
+                last,
+                type_filters,
+                has_bash_output,
+                no_cache,
+                output_format,
+            )
+            .await?;
+        }
+        Some(Commands::Cache { action }) => match action {
+            CacheCommands::Stats => {
+                commands::handle_cache_stats().await?;
+            }
+            CacheCommands::Clear => {
+                commands::handle_cache_clear().await?;
+            }
+            CacheCommands::Delete { session_id } => {
+                commands::handle_cache_delete(&session_id).await?;
+            }
+        },
         None => {
             println!("No command specified. Use --help for usage information.");
         }

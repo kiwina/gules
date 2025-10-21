@@ -7,9 +7,11 @@
 //! utilities. It's not published to crates.io as it's internal to the
 //! Gules ecosystem.
 
+pub mod activity_cache;
 pub mod config;
 pub mod display;
 
 // Re-export commonly used types
+pub use activity_cache::*;
 pub use config::*;
 pub use display::*;

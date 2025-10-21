@@ -16,6 +16,10 @@ readme = "README.md"
 name = "gules"
 path = "src/main.rs"
 
+[lib]
+name = "gules"
+path = "src/lib.rs"
+
 [features]
 default = []
 mcp = ["dep:jules-mcp", "dep:rmcp", "dep:schemars", "dep:serde"]

@@ -15,6 +15,33 @@ pub struct Config {
     pub default_owner: Option<String>,
     #[serde(default)]
     pub default_repo: Option<String>,
+    #[serde(default)]
+    pub cache: CacheConfig,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CacheConfig {
+    #[serde(default = "default_cache_enabled")]
+    pub enabled: bool,
+    #[serde(default = "default_max_sessions")]
+    pub max_sessions: usize,
+}
+
+fn default_cache_enabled() -> bool {
+    true
+}
+
+fn default_max_sessions() -> usize {
+    50
+}
+
+impl Default for CacheConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_cache_enabled(),
+            max_sessions: default_max_sessions(),
+        }
+    }
 }
 
 pub fn get_config_path() -> Result<PathBuf> {

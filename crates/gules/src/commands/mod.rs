@@ -1,16 +1,11 @@
 //! Extended CLI command implementations.
 //!
-//! This module contains extended command implementations that require
-//! external tools like the GitHub CLI or provide advanced monitoring
-//! features not available in the basic CLI.
+//! This module contains extended command implementations for filtering
+//! and caching activities.
 
-pub mod issue_status;
-pub mod pr_status;
-pub mod watch;
-pub mod monitor;
+pub mod cache;
+pub mod filter_activities;
 
-// Re-export extended command handlers
-pub use issue_status::*;
-pub use pr_status::*;
-pub use watch::*;
-pub use monitor::*;
+// Re-export command handlers
+pub use cache::*;
+pub use filter_activities::*;
