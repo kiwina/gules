@@ -1,6 +1,6 @@
 # Gules Project - AI Agent Guide
 
-**Last Updated**: October 17, 2025  
+**Last Updated**: October 22, 2025  
 **Status**: ✅ Production Ready
 
 ## Quick Reference
@@ -10,7 +10,7 @@
 jules-rs   → Pure SDK (9 API methods)
 jules-cli  → CLI interface (13 commands)
 jules-mcp  → MCP server (9 tools)
-gules      → Extended CLI (17 commands) + optional MCP (11 tools)
+gules      → Extended CLI (20 commands) + optional MCP (11 tools)
 ```
 
 ### Project Structure
@@ -24,16 +24,18 @@ crates/
 ```
 
 ### Test Status
-- **Total**: 46 tests passing
+- **Total**: 71 tests passing
 - **Coverage**: 100% API coverage
 - **Quality**: Zero warnings, zero errors
 
-## Commands (17 total)
+## Commands (20 total)
 
 **Session Management** (5): sessions, session, active, completed, failed  
 **Session Actions** (3): create, send-message, approve-plan  
 **Sources** (2): sources, source  
 **Activities** (2): activities, activity  
+**Activity Filtering** (1): filter-activities  
+**Cache Management** (3): cache stats, cache clear, cache delete  
 **Extended** (4): watch, monitor, issue-status, pr-status  
 **Config** (1): config
 

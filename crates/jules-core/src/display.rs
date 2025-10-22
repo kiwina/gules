@@ -368,11 +368,14 @@ pub fn display_artifact_summary(artifact: &Artifact) {
         } else {
             bash.command.clone()
         };
+        let exit_status = bash.exit_code
+            .map(|c| format!("{}", c))
+            .unwrap_or_else(|| "unknown".to_string());
         println!(
             "  {} {} (exit: {})",
             "🐚".cyan(),
             cmd_preview,
-            bash.exit_code
+            exit_status
         );
     }
 
@@ -489,72 +492,47 @@ pub fn print_sources_table(sources: &[Source]) {
 
 pub fn print_activities_table(activities: &[&Activity]) {
     if activities.is_empty() {
+        println!("{}", "No activities found.".yellow());
         return;
     }
 
-    let id_len = 20;
-    let type_len = 15;
-    let time_len = 12;
-    let content_len = 40;
+    use comfy_table::{presets::UTF8_FULL_CONDENSED, Cell, CellAlignment, ContentArrangement, Table};
 
-    println!(
-        "{}",
-        "─".repeat(id_len + type_len + time_len + content_len + 13)
-    );
-    println!(
-        "{:<width_id$} {:<width_type$} {:<width_time$} {:<width_content$}",
-        "Activity ID",
-        "Type",
-        "Time",
-        "Content",
-        width_id = id_len,
-        width_type = type_len,
-        width_time = time_len,
-        width_content = content_len
-    );
-    println!(
-        "{}",
-        "─".repeat(id_len + type_len + time_len + content_len + 13)
-    );
+    let mut table = Table::new();
+    table
+        .load_preset(UTF8_FULL_CONDENSED)
+        .set_content_arrangement(ContentArrangement::Dynamic)
+        .set_header(vec!["Info", "Time", "Content"]);
 
     for activity in activities {
-        let truncated_id = if activity.id.len() > id_len {
-            format!("{}...", &activity.id[..id_len - 3])
-        } else {
-            activity.id.clone()
-        };
-
+        // Prepare ID and Type for the Info column (2 rows)
+        let id = &activity.id;
         let activity_type = activity.activity_type();
-        let truncated_type = if activity_type.len() > type_len {
-            format!("{}...", &activity_type[..type_len - 3])
+        let info_cell = format!("{}\n{}", id, activity_type);
+
+        // Format time
+        let time = display_timestamp(&activity.create_time);
+
+        // Prepare content (truncate to 80 chars, remove newlines)
+        let content = activity.content().unwrap_or_else(|| "-".to_string());
+        let display_content = content
+            .replace('\n', " ")
+            .replace("  ", " ")
+            .chars()
+            .take(80)
+            .collect::<String>();
+        let final_content = if content.len() > 80 {
+            format!("{}...", display_content)
         } else {
-            activity_type.to_string()
+            display_content
         };
 
-        let time_display = display_timestamp(&activity.create_time);
-
-        let content_preview = activity.content().unwrap_or_else(|| "-".to_string());
-        let truncated_content = if content_preview.len() > content_len {
-            format!("{}...", &content_preview[..content_len - 3])
-        } else {
-            content_preview
-        };
-
-        println!(
-            "{:<width_id$} {:<width_type$} {:<width_time$} {:<width_content$}",
-            truncated_id,
-            truncated_type,
-            time_display,
-            truncated_content,
-            width_id = id_len,
-            width_type = type_len,
-            width_time = time_len,
-            width_content = content_len
-        );
+        table.add_row(vec![
+            Cell::new(info_cell).set_alignment(CellAlignment::Left),
+            Cell::new(time).set_alignment(CellAlignment::Left),
+            Cell::new(final_content).set_alignment(CellAlignment::Left),
+        ]);
     }
 
-    println!(
-        "{}",
-        "─".repeat(id_len + type_len + time_len + content_len + 13)
-    );
+    println!("{table}");
 }
