@@ -19,6 +19,25 @@ mod extended_commands;
 #[cfg(feature = "mcp")]
 mod mcp;
 
+/// Output format for CLI commands
+#[derive(Debug, Clone)]
+pub enum OutputFormat {
+    Json,
+    Table,
+    Full,
+}
+
+impl OutputFormat {
+    pub fn from_str(s: &str) -> anyhow::Result<Self> {
+        match s.to_lowercase().as_str() {
+            "json" => Ok(Self::Json),
+            "table" => Ok(Self::Table),
+            "full" => Ok(Self::Full),
+            _ => anyhow::bail!("Unknown output format: {}. Valid options: json, table, full", s),
+        }
+    }
+}
+
 #[derive(Parser)]
 #[command(name = "gules")]
 #[command(version)]
@@ -49,12 +68,18 @@ enum Commands {
         /// Maximum number of sessions (1-100, default: 50)
         #[arg(long, default_value = "50", value_name = "NUM")]
         limit: u32,
+        /// Output format: json, table, full (default: json)
+        #[arg(long, default_value = "json", value_name = "FORMAT")]
+        format: String,
     },
     /// Get detailed information about a specific session
     Session {
         /// Session ID (long numeric string)
         #[arg(value_name = "SESSION_ID")]
         id: String,
+        /// Output format: json, table, full (default: json)
+        #[arg(long, default_value = "json", value_name = "FORMAT")]
+        format: String,
     },
     /// List only active sessions (convenience filter)
     Active {
@@ -64,6 +89,9 @@ enum Commands {
         /// Maximum number of results (1-100)
         #[arg(long, default_value = "50", value_name = "NUM")]
         limit: u32,
+        /// Output format: json, table, full (default: json)
+        #[arg(long, default_value = "json", value_name = "FORMAT")]
+        format: String,
     },
     /// List only completed sessions (convenience filter)
     Completed {
@@ -73,6 +101,9 @@ enum Commands {
         /// Maximum number of results (1-100)
         #[arg(long, default_value = "50", value_name = "NUM")]
         limit: u32,
+        /// Output format: json, table, full (default: json)
+        #[arg(long, default_value = "json", value_name = "FORMAT")]
+        format: String,
     },
     /// List only failed sessions (convenience filter)
     Failed {
@@ -82,6 +113,9 @@ enum Commands {
         /// Maximum number of results (1-100)
         #[arg(long, default_value = "50", value_name = "NUM")]
         limit: u32,
+        /// Output format: json, table, full (default: json)
+        #[arg(long, default_value = "json", value_name = "FORMAT")]
+        format: String,
     },
     /// Create a new Jules AI coding session
     Create {
@@ -97,12 +131,15 @@ enum Commands {
         /// Starting branch for GitHub repos (default: main)
         #[arg(long, value_name = "BRANCH")]
         branch: Option<String>,
-        /// Require plan approval before execution
-        #[arg(long)]
+        /// Require plan approval before execution (default: false)
+        #[arg(long, default_value = "false")]
         require_approval: bool,
-        /// Automation mode: AUTO_CREATE_PR or MANUAL
-        #[arg(long, value_name = "MODE")]
-        automation_mode: Option<String>,
+        /// Automation mode: AUTO_CREATE_PR or MANUAL (default: AUTO_CREATE_PR)
+        #[arg(long, default_value = "AUTO_CREATE_PR", value_name = "MODE")]
+        automation_mode: String,
+        /// Output format: json, table, full (default: json)
+        #[arg(long, default_value = "json", value_name = "FORMAT")]
+        format: String,
     },
     /// List available code sources/repositories
     Sources {
@@ -112,12 +149,18 @@ enum Commands {
         /// Maximum number of results (1-100)
         #[arg(long, default_value = "50", value_name = "NUM")]
         limit: u32,
+        /// Output format: json, table, full (default: json)
+        #[arg(long, default_value = "json", value_name = "FORMAT")]
+        format: String,
     },
     /// Get detailed information about a specific source
     Source {
         /// Source ID (format: sources/github/owner/repo)
         #[arg(value_name = "SOURCE_ID")]
         id: String,
+        /// Output format: json, table, full (default: json)
+        #[arg(long, default_value = "json", value_name = "FORMAT")]
+        format: String,
     },
     /// List all activities in a session
     Activities {
@@ -127,6 +170,9 @@ enum Commands {
         /// Maximum number of activities (1-100)
         #[arg(long, default_value = "50", value_name = "NUM")]
         limit: u32,
+        /// Output format: json, table, full (default: json)
+        #[arg(long, default_value = "json", value_name = "FORMAT")]
+        format: String,
     },
     /// Get detailed information about a specific activity
     Activity {
@@ -136,6 +182,9 @@ enum Commands {
         /// Activity ID (long numeric string)
         #[arg(value_name = "ACTIVITY_ID")]
         activity_id: String,
+        /// Output format: json, table, full (default: json)
+        #[arg(long, default_value = "json", value_name = "FORMAT")]
+        format: String,
     },
     /// Send a message to an active Jules session
     SendMessage {
@@ -207,8 +256,8 @@ enum Commands {
         /// Disable cache and fetch fresh from API
         #[arg(long)]
         no_cache: bool,
-        /// Output format: table, json, full, content-only
-        #[arg(long, default_value = "table", value_name = "FORMAT")]
+        /// Output format: json (default, machine-readable), table (human-readable), full (detailed), content-only (text only)
+        #[arg(long, default_value = "json", value_name = "FORMAT")]
         format: String,
     },
     /// Manage activity cache
@@ -263,29 +312,21 @@ async fn main() -> anyhow::Result<()> {
             state,
             search,
             limit,
+            format,
         }) => {
-            let args = SessionsArgs {
-                state,
-                search,
-                limit,
-            };
-            handle_sessions(args).await?;
+            extended_commands::handle_sessions_formatted(state, search, limit, &format).await?;
         }
-        Some(Commands::Session { id }) => {
-            let args = SessionArgs { id };
-            handle_session(args).await?;
+        Some(Commands::Session { id, format }) => {
+            extended_commands::handle_session_formatted(&id, &format).await?;
         }
-        Some(Commands::Active { search, limit }) => {
-            let args = ActiveArgs { search, limit };
-            handle_active(args).await?;
+        Some(Commands::Active { search, limit, format }) => {
+            extended_commands::handle_active_formatted(search, limit, &format).await?;
         }
-        Some(Commands::Completed { search, limit }) => {
-            let args = CompletedArgs { search, limit };
-            handle_completed(args).await?;
+        Some(Commands::Completed { search, limit, format }) => {
+            extended_commands::handle_completed_formatted(search, limit, &format).await?;
         }
-        Some(Commands::Failed { search, limit }) => {
-            let args = FailedArgs { search, limit };
-            handle_failed(args).await?;
+        Some(Commands::Failed { search, limit, format }) => {
+            extended_commands::handle_failed_formatted(search, limit, &format).await?;
         }
         Some(Commands::Create {
             prompt,
@@ -294,38 +335,33 @@ async fn main() -> anyhow::Result<()> {
             branch,
             require_approval,
             automation_mode,
+            format,
         }) => {
-            let args = CreateArgs {
+            extended_commands::handle_create_formatted(
                 prompt,
                 source,
                 title,
                 branch,
                 require_approval,
-                automation_mode,
-            };
-            handle_create(args).await?;
+                &automation_mode,
+                &format,
+            ).await?;
         }
-        Some(Commands::Sources { filter, limit }) => {
-            let args = SourcesArgs { filter, limit };
-            handle_sources(args).await?;
+        Some(Commands::Sources { filter, limit, format }) => {
+            extended_commands::handle_sources_formatted(filter, limit, &format).await?;
         }
-        Some(Commands::Source { id }) => {
-            let args = SourceArgs { id };
-            handle_source(args).await?;
+        Some(Commands::Source { id, format }) => {
+            extended_commands::handle_source_formatted(&id, &format).await?;
         }
-        Some(Commands::Activities { session_id, limit }) => {
-            let args = ActivitiesArgs { session_id, limit };
-            handle_activities(args).await?;
+        Some(Commands::Activities { session_id, limit, format }) => {
+            extended_commands::handle_activities_formatted(&session_id, limit, &format).await?;
         }
         Some(Commands::Activity {
             session_id,
             activity_id,
+            format,
         }) => {
-            let args = ActivityArgs {
-                session_id,
-                activity_id,
-            };
-            handle_activity(args).await?;
+            extended_commands::handle_activity_formatted(&session_id, &activity_id, &format).await?;
         }
         Some(Commands::SendMessage {
             session_id,

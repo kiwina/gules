@@ -1,6 +1,6 @@
 [package]
 name = "gules"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 description = "Extended CLI and MCP server for Google's Jules AI coding agent with GitHub integrations"
 authors = ["Kiwina <kiwina@example.com>"]

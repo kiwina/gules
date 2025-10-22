@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.1] - 2025-10-23
+
+### Added
+- **Universal Output Format Support**: All commands now support `--format` flag
+  - `json` (default) - Native JSON output for machine-readable results
+  - `table` - Human-readable table format
+  - `full` - Complete detailed view with all fields
+- Default to JSON output for scriptability and piping
+- `filter-activities` includes `content-only` format for extracting just text
+
+### Changed
+- **Create command defaults**: More sensible defaults for common workflows
+  - `--require-approval` now defaults to `false` (was required flag)
+  - `--automation-mode` now defaults to `AUTO_CREATE_PR` (was optional)
+- All list/get commands output JSON by default for machine-readability
+- Improved activity table display with comfy-table (3-column layout)
+
+---
+
 ## [0.2.0] - 2025-10-22
 
 ### Added

@@ -49,20 +49,24 @@ impl ActivityTypeFilter {
 /// Output format
 #[derive(Debug, Clone)]
 pub enum OutputFormat {
-    Table,
+    /// Native JSON output (machine-readable, complete data)
     Json,
+    /// Human-readable table (truncated for display)
+    Table,
+    /// Full detailed view with all fields (human-readable)
     Full,
+    /// Content only (just the text, no metadata)
     ContentOnly,
 }
 
 impl OutputFormat {
     pub fn from_str(s: &str) -> Result<Self> {
         match s.to_lowercase().as_str() {
-            "table" => Ok(Self::Table),
             "json" => Ok(Self::Json),
+            "table" => Ok(Self::Table),
             "full" => Ok(Self::Full),
             "content" | "content-only" => Ok(Self::ContentOnly),
-            _ => anyhow::bail!("Unknown output format: {}", s),
+            _ => anyhow::bail!("Unknown output format: {}. Valid options: json, table, full, content-only", s),
         }
     }
 }
@@ -159,16 +163,16 @@ fn display_activities(activities: &[Activity], format: OutputFormat) -> Result<(
     }
 
     match format {
+        OutputFormat::Json => {
+            let json = serde_json::to_string_pretty(&activities)
+                .context("Failed to serialize activities")?;
+            println!("{}", json);
+        }
         OutputFormat::Table => {
             println!("Activities ({})", activities.len());
             println!("====================");
             let refs: Vec<&Activity> = activities.iter().collect();
             jules_core::display::print_activities_table(&refs);
-        }
-        OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&activities)
-                .context("Failed to serialize activities")?;
-            println!("{}", json);
         }
         OutputFormat::Full => {
             for (i, activity) in activities.iter().enumerate() {
