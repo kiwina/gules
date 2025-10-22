@@ -65,11 +65,24 @@ impl Activity {
         } else if let Some(msg) = &self.user_messaged {
             Some(msg.user_message.clone())
         } else if let Some(progress) = &self.progress_updated {
-            Some(format!(
-                "{}: {}",
-                progress.title,
-                progress.description.as_deref().unwrap_or("")
-            ))
+            // Check if there's a bash command in artifacts
+            let bash_cmd = self.artifacts.iter()
+                .find_map(|a| a.bash_output.as_ref())
+                .map(|b| {
+                    // Clean up the command: trim whitespace and replace newlines with spaces
+                    b.command.trim().replace('\n', " ").replace("  ", " ")
+                });
+            
+            if let Some(cmd) = bash_cmd {
+                // Show the command cleanly without extra "Command:" prefix
+                Some(format!("Ran: {}", cmd))
+            } else {
+                Some(format!(
+                    "{}: {}",
+                    progress.title,
+                    progress.description.as_deref().unwrap_or("")
+                ))
+            }
         } else {
             self.session_failed
                 .as_ref()

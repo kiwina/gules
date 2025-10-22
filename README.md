@@ -367,6 +367,6 @@ Licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-**Version**: 0.1.0  
+**Version**: 0.2.0  
 **Status**: Production Ready ✅  
-**Last Updated**: October 16, 2025
+**Last Updated**: October 22, 2025

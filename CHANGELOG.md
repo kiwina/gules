@@ -7,23 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.2.0] - 2025-10-22
+
 ### Added
-- Complete CLI with 17 commands covering all Jules SDK operations
-- MCP server support via feature flags (`mcp` and `extended-mcp`)
-- Extended commands: `watch`, `monitor`, `issue-status`, `pr-status`
-- GitHub integration for issue and PR tracking
-- Configuration management via `~/.config/gules/config.toml`
+- **Activity Filtering & Caching System**: Smart client-side filtering with local cache
+  - `filter-activities` command - Filter activities by type, bash output, or last N items
+  - `cache` command - Manage activity cache (stats, clear, delete)
+  - Incremental updates using page tokens for efficiency
+  - FIFO cache eviction (max 50 sessions, configurable)
+  - Offline access to cached activities
 
-### Features
-- **jules-rs**: Pure 1:1 SDK with 9 API methods
-- **jules-cli**: 13 commands (sessions, sources, activities, config)
-- **jules-mcp**: MCP server with 9 SDK tools
-- **gules**: Extended CLI + optional MCP (11 tools with `extended-mcp`)
+### Fixed
+- **BashOutput.exit_code**: Made optional to handle missing API fields
+  - Prevents deserialization failures in production
+  - Displays "unknown" when exit code is missing
+  - Added comprehensive validation tests with real API data
 
-### Build Options
-- Default: CLI only (lightweight)
-- `--features mcp`: CLI + basic MCP server
-- `--features extended-mcp`: CLI + extended MCP with monitoring
+### Changed
+- Added `--version` flag support to CLI
+- Improved error handling in cache operations
+- Enhanced display formatting for optional fields
+
+### Testing
+- Added 6 new validation tests (71 total, was 65)
+- Added real API data validation suite
+- Added cache functionality tests
+- Zero warnings, zero errors
+
+### Performance
+- Batched cache eviction to reduce I/O operations
+- Fixed disk size units (proper MiB calculation)
+- Optimized filtering with in-place truncation
+
+### Documentation
+- Updated README with cache configuration
+- Added validation test documentation in jules-rs/README.md
+- Documented all activity and artifact types
 
 ---
 

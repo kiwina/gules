@@ -21,6 +21,7 @@ mod mcp;
 
 #[derive(Parser)]
 #[command(name = "gules")]
+#[command(version)]
 #[command(about = "Extended CLI and MCP server for Google's Jules AI coding agent")]
 #[command(
     long_about = "Full-featured Jules AI companion with GitHub integrations, advanced monitoring, and MCP server support."
