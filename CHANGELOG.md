@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.2] - 2025-10-26
+
+### Fixed
+- **Critical API Compatibility**: Made `GitPatch` fields (`unidiffPatch`, `baseCommitId`) optional
+  - Fixes deserialization failures when API returns `GitPatch` objects without these fields
+  - Prevents crashes when API response structure varies
+  - All commands now resilient to missing fields in API responses
+- Updated display code to gracefully handle missing git patch data
+- Fixed all tests to work with real API data format
+
+### Changed
+- Test data format now uses direct activities array (not wrapped in response object)
+- Tests validate against real API responses for better compatibility
+
+---
+
 ## [0.2.1] - 2025-10-23
 
 ### Added

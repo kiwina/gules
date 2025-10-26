@@ -168,10 +168,10 @@ pub struct ChangeSet {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GitPatch {
-    #[serde(rename = "unidiffPatch")]
-    pub unidiff_patch: String,
-    #[serde(rename = "baseCommitId")]
-    pub base_commit_id: String,
+    #[serde(rename = "unidiffPatch", skip_serializing_if = "Option::is_none")]
+    pub unidiff_patch: Option<String>,
+    #[serde(rename = "baseCommitId", skip_serializing_if = "Option::is_none")]
+    pub base_commit_id: Option<String>,
     #[serde(
         rename = "suggestedCommitMessage",
         skip_serializing_if = "Option::is_none"

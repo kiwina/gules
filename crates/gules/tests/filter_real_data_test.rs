@@ -24,10 +24,8 @@ fn test_filter_real_activities_json() {
     let json_content = std::fs::read_to_string(&json_path)
         .expect("Failed to read activities.json");
     
-    let response: serde_json::Value = serde_json::from_str(&json_content)
-        .expect("Failed to parse JSON");
-    
-    let activities: Vec<Activity> = serde_json::from_value(response["activities"].clone())
+    // Parse activities array directly (format from gules activities command)
+    let activities: Vec<Activity> = serde_json::from_str(&json_content)
         .expect("Failed to parse activities array");
 
     // Count total activities
@@ -161,14 +159,13 @@ fn test_detect_bash_output_in_progress_updates() {
     }
 
     let json_content = std::fs::read_to_string(&json_path).unwrap();
-    let response: serde_json::Value = serde_json::from_str(&json_content).unwrap();
-    let activities: Vec<Activity> = serde_json::from_value(response["activities"].clone()).unwrap();
+    // Parse activities array directly (format from gules activities command)
+    let activities: Vec<Activity> = serde_json::from_str(&json_content).unwrap();
 
-    // Find the specific activity that should have bash output
-    // Activity ID: cd8fa5218bbc480082736e117fda7a66
+    // Find any activity that has bash output (since the specific ID may not be in this session)
     let bash_activity = activities.iter()
-        .find(|a| a.id == "cd8fa5218bbc480082736e117fda7a66")
-        .expect("Could not find bash output activity in sample data");
+        .find(|a| a.artifacts.iter().any(|artifact| artifact.bash_output.is_some()))
+        .expect("Could not find any activity with bash output in sample data");
 
     println!("Found activity: {}", bash_activity.id);
     println!("  progress_updated: {}", bash_activity.progress_updated.is_some());

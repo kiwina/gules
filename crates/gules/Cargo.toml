@@ -1,6 +1,6 @@
 [package]
 name = "gules"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 description = "Extended CLI and MCP server for Google's Jules AI coding agent with GitHub integrations"
 authors = ["Kiwina <kiwina@example.com>"]
@@ -26,8 +26,8 @@ mcp = ["dep:jules-mcp", "dep:rmcp", "dep:schemars", "dep:serde"]
 extended-mcp = ["mcp"]
 
 [dependencies]
-jules-rs = { path = "../jules-rs", version = "0.1.0" }
-jules-core = { path = "../jules-core", version = "0.1.0" }
+jules-rs = { path = "../jules-rs", version = "0.1.1" }
+jules-core = { path = "../jules-core", version = "0.1.1" }
 jules-cli = { path = "../jules-cli", version = "0.1.0" }
 jules-mcp = { path = "../jules-mcp", version = "0.1.0", optional = true }
 clap = { version = "4.4", features = ["derive"] }

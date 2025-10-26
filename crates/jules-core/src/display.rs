@@ -381,15 +381,19 @@ pub fn display_artifact_summary(artifact: &Artifact) {
 
     if let Some(change_set) = &artifact.change_set {
         if let Some(patch) = &change_set.git_patch {
-            // Count lines added/removed from git patch
-            let added = patch.unidiff_patch.matches("+\n").count();
-            let removed = patch.unidiff_patch.matches("-\n").count();
-            println!(
-                "  {} Git patch: {} added, {} removed",
-                "📝".yellow(),
-                added,
-                removed
-            );
+            // Count lines added/removed from git patch if unidiff_patch is available
+            if let Some(unidiff) = &patch.unidiff_patch {
+                let added = unidiff.matches("+\n").count();
+                let removed = unidiff.matches("-\n").count();
+                println!(
+                    "  {} Git patch: {} added, {} removed",
+                    "📝".yellow(),
+                    added,
+                    removed
+                );
+            } else {
+                println!("  {} Git patch (no diff available)", "📝".yellow());
+            }
         }
     }
 

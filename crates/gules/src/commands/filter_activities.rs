@@ -214,9 +214,14 @@ fn display_activities(activities: &[Activity], format: OutputFormat) -> Result<(
                             println!("    Type: Change Set");
                             println!("    Source: {}", changeset.source);
                             if let Some(patch) = &changeset.git_patch {
-                                println!("    Base Commit: {}", patch.base_commit_id);
+                                if let Some(base_commit) = &patch.base_commit_id {
+                                    println!("    Base Commit: {}", base_commit);
+                                }
                                 if let Some(msg) = &patch.suggested_commit_message {
                                     println!("    Suggested Commit: {}", msg);
+                                }
+                                if patch.unidiff_patch.is_none() {
+                                    println!("    (No diff available)");
                                 }
                             }
                         }
