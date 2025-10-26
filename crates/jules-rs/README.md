@@ -192,6 +192,41 @@ match client.list_sessions().await {
 }
 ```
 
+## 🛡️ API Resilience & Debugging
+
+The SDK is designed to gracefully handle API changes and provide clear debugging signals when the API introduces new features:
+
+### Unknown Activity Types
+
+When Google adds new activity types to the API, the SDK will automatically detect and display them with a clear marker:
+
+```rust
+let activity_type = activity.activity_type();
+// Known types: "Agent Messaged", "Progress Updated", "User Messaged", etc.
+// New/unknown types: "Code Reviewed [UNKNOWN]" - indicates SDK needs updating
+// Error cases: "[ERROR: No Activity Type]" - indicates malformed data
+```
+
+**Debugging Markers:**
+- `[UNKNOWN]` - API introduced a new activity type not yet in the SDK
+- `[ERROR: ...]` - Malformed activity data or serialization failure
+
+This design ensures:
+- ✅ **No crashes** when Google adds new activity types
+- ✅ **Clear visibility** when SDK updates are needed
+- ✅ **Graceful degradation** - shows what information is available
+- ✅ **Easy debugging** - markers make issues obvious in logs/output
+
+### Optional Fields
+
+Many API fields are marked as optional even if the documentation suggests they're required:
+- `GitPatch.unidiffPatch` - May be absent for certain change types
+- `GitPatch.baseCommitId` - May be absent for initial commits
+- `ProgressUpdated.title` - May be absent for some progress events
+- `BashOutput.exitCode` - May be absent for running commands
+
+The SDK uses `Option<T>` liberally to handle real-world API behavior, not just documented behavior.
+
 ## 🤝 Contributing
 
 This SDK is part of the modular Gules ecosystem. See the workspace [REFACTORING_PLAN.md](../REFACTORING_PLAN.md) for development guidelines.

@@ -276,7 +276,7 @@ pub fn display_timestamp(timestamp: &str) -> String {
 
 /// Display activity summary for CLI (concise) - use JSON for full details
 pub fn display_activity_summary(activity: &Activity) {
-    match activity.activity_type() {
+    match activity.activity_type().as_str() {
         "Agent Message" => {
             if let Some(msg) = &activity.agent_messaged {
                 // Truncate long messages for CLI
@@ -302,7 +302,8 @@ pub fn display_activity_summary(activity: &Activity) {
         "Progress Update" => {
             if let Some(progress) = &activity.progress_updated {
                 // Show only title, not full description (too verbose for CLI)
-                println!("{} {}", "⚙".blue(), progress.title);
+                let title = progress.title.as_deref().unwrap_or("Progress update");
+                println!("{} {}", "⚙".blue(), title);
 
                 // Show artifact summaries if present
                 for artifact in &activity.artifacts {

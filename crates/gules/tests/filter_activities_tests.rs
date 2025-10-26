@@ -128,7 +128,7 @@ fn test_activity_type_filter_matches_failed() {
 fn test_activity_type_filter_matches_progress() {
     let mut activity = create_test_activity("1");
     activity.progress_updated = Some(ProgressUpdated {
-        title: "Working on it".to_string(),
+        title: Some("Working on it".to_string()),
         description: Some("Making progress".to_string()),
     });
 
@@ -219,7 +219,7 @@ fn test_activity_content_extraction() {
     // Test progress content
     let mut activity = create_test_activity("3");
     activity.progress_updated = Some(ProgressUpdated {
-        title: "Building".to_string(),
+        title: Some("Building".to_string()),
         description: Some("Compiling code".to_string()),
     });
     assert_eq!(
@@ -249,13 +249,13 @@ fn test_activity_type_string() {
     activity.agent_messaged = Some(AgentMessaged {
         agent_message: "test".to_string(),
     });
-    assert_eq!(activity.activity_type(), "Agent Message");
+    assert_eq!(activity.activity_type(), "Agent Messaged");
 
     let mut activity = create_test_activity("2");
     activity.user_messaged = Some(UserMessaged {
         user_message: "test".to_string(),
     });
-    assert_eq!(activity.activity_type(), "User Message");
+    assert_eq!(activity.activity_type(), "User Messaged");
 
     let mut activity = create_test_activity("3");
     activity.plan_generated = Some(PlanGenerated {
@@ -274,7 +274,10 @@ fn test_activity_type_string() {
     assert_eq!(activity.activity_type(), "Session Failed");
 
     let activity = create_test_activity("5");
-    assert_eq!(activity.activity_type(), "Unknown");
+    // Activity with no type should return error marker
+    let activity_type = activity.activity_type();
+    assert!(activity_type.contains("[ERROR") || activity_type.contains("[UNKNOWN]"), 
+        "Expected error or unknown marker, got: {}", activity_type);
 }
 
 #[test]

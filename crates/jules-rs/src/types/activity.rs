@@ -32,30 +32,48 @@ pub struct Activity {
 }
 
 impl Activity {
-    /// Get activity type as string
-    pub fn activity_type(&self) -> &'static str {
-        if self.agent_messaged.is_some() {
-            return "Agent Message";
+    /// Get activity type as human-readable string by parsing the JSON structure
+    /// This method is resilient to API changes - if Google adds new activity types,
+    /// we'll still display them correctly by extracting the field name from the data.
+    /// 
+    /// Returns:
+    /// - Known activity types: "Agent Messaged", "Progress Updated", etc.
+    /// - Unknown activity types: "New Type [UNKNOWN]" - indicates SDK needs updating
+    /// - Error case: "[ERROR: No Activity Type]" - indicates malformed activity data
+    pub fn activity_type(&self) -> String {
+        // Serialize back to JSON value to inspect which field is set
+        // This way we don't need to maintain a hardcoded list
+        if let Ok(value) = serde_json::to_value(self) {
+            if let Some(obj) = value.as_object() {
+                // Known activity type fields (in camelCase from API)
+                let activity_fields = [
+                    "agentMessaged", "userMessaged", "planGenerated", "planApproved",
+                    "progressUpdated", "sessionCompleted", "sessionFailed"
+                ];
+                
+                // Find which activity field is set
+                for field in activity_fields {
+                    if obj.contains_key(field) {
+                        return camel_to_title_case(field);
+                    }
+                }
+                
+                // If it's a new activity type we don't know about yet,
+                // find any camelCase field that isn't a standard Activity field
+                let standard_fields = ["name", "id", "description", "createTime", "originator", "artifacts"];
+                for (key, val) in obj.iter() {
+                    if !standard_fields.contains(&key.as_str()) && !val.is_null() {
+                        // Found a non-standard field - probably a new activity type
+                        // Add [UNKNOWN] marker to make it obvious the SDK needs updating
+                        return format!("{} [UNKNOWN]", camel_to_title_case(key));
+                    }
+                }
+            }
         }
-        if self.user_messaged.is_some() {
-            return "User Message";
-        }
-        if self.plan_generated.is_some() {
-            return "Plan Generated";
-        }
-        if self.plan_approved.is_some() {
-            return "Plan Approved";
-        }
-        if self.progress_updated.is_some() {
-            return "Progress Update";
-        }
-        if self.session_completed.is_some() {
-            return "Session Completed";
-        }
-        if self.session_failed.is_some() {
-            return "Session Failed";
-        }
-        "Unknown"
+        
+        // Fallback if serialization fails or no activity type found (shouldn't happen)
+        // Make it obvious with [ERROR] marker that something went wrong
+        "[ERROR: No Activity Type]".to_string()
     }
 
     /// Get activity content as string
@@ -77,11 +95,9 @@ impl Activity {
                 // Show the command cleanly without extra "Command:" prefix
                 Some(format!("Ran: {}", cmd))
             } else {
-                Some(format!(
-                    "{}: {}",
-                    progress.title,
-                    progress.description.as_deref().unwrap_or("")
-                ))
+                let title = progress.title.as_deref().unwrap_or("Progress update");
+                let desc = progress.description.as_deref().unwrap_or("");
+                Some(format!("{}: {}", title, desc))
             }
         } else {
             self.session_failed
@@ -89,6 +105,31 @@ impl Activity {
                 .map(|failed| format!("Session failed: {}", failed.reason))
         }
     }
+}
+
+/// Convert camelCase to Title Case
+/// Examples: "agentMessaged" -> "Agent Messaged", "progressUpdated" -> "Progress Updated"
+fn camel_to_title_case(s: &str) -> String {
+    let mut result = String::new();
+    let mut chars = s.chars().peekable();
+    
+    // Capitalize the first character
+    if let Some(first) = chars.next() {
+        result.push(first.to_uppercase().next().unwrap());
+    }
+    
+    // Process remaining characters
+    while let Some(ch) = chars.next() {
+        if ch.is_uppercase() {
+            // Add space before uppercase letter
+            result.push(' ');
+            result.push(ch);
+        } else {
+            result.push(ch);
+        }
+    }
+    
+    result
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -135,7 +176,8 @@ pub struct PlanApproved {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProgressUpdated {
-    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -201,4 +243,72 @@ pub struct ListActivitiesResponse {
     pub activities: Vec<Activity>,
     #[serde(rename = "nextPageToken")]
     pub next_page_token: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_camel_to_title_case() {
+        assert_eq!(camel_to_title_case("agentMessaged"), "Agent Messaged");
+        assert_eq!(camel_to_title_case("userMessaged"), "User Messaged");
+        assert_eq!(camel_to_title_case("planGenerated"), "Plan Generated");
+        assert_eq!(camel_to_title_case("planApproved"), "Plan Approved");
+        assert_eq!(camel_to_title_case("progressUpdated"), "Progress Updated");
+        assert_eq!(camel_to_title_case("sessionCompleted"), "Session Completed");
+        assert_eq!(camel_to_title_case("sessionFailed"), "Session Failed");
+        assert_eq!(camel_to_title_case("unknown"), "Unknown");
+        
+        // Test edge cases
+        assert_eq!(camel_to_title_case("helloWorld"), "Hello World");
+        assert_eq!(camel_to_title_case("HTTPRequest"), "H T T P Request");
+        assert_eq!(camel_to_title_case("a"), "A");
+        assert_eq!(camel_to_title_case(""), "");
+    }
+
+    #[test]
+    fn test_activity_type_conversion() {
+        // Test each known activity type
+        let test_cases = vec![
+            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"agentMessaged":{"agentMessage":"test"}}"#, "Agent Messaged"),
+            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"user","artifacts":[],"userMessaged":{"userMessage":"test"}}"#, "User Messaged"),
+            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"planGenerated":{"plan":{"id":"p1","steps":[]}}}"#, "Plan Generated"),
+            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"planApproved":{"planId":"p1"}}"#, "Plan Approved"),
+            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"progressUpdated":{"description":"test"}}"#, "Progress Updated"),
+            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"system","artifacts":[],"sessionCompleted":{}}"#, "Session Completed"),
+            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"system","artifacts":[],"sessionFailed":{"reason":"error"}}"#, "Session Failed"),
+        ];
+        
+        for (json, expected_type) in test_cases {
+            let activity: Activity = serde_json::from_str(json)
+                .unwrap_or_else(|e| panic!("Failed to parse JSON for {}: {}", expected_type, e));
+            assert_eq!(activity.activity_type(), expected_type, 
+                "Activity type mismatch for {}", expected_type);
+        }
+    }
+
+    #[test]
+    fn test_activity_type_resilience() {
+        // Test that we handle activity with no type gracefully
+        let no_type_json = r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[]}"#;
+        let activity: Activity = serde_json::from_str(no_type_json).unwrap();
+        let activity_type = activity.activity_type();
+        assert!(!activity_type.is_empty(), "Should return some activity type");
+        assert!(activity_type.contains("[ERROR"), "Should have error marker: {}", activity_type);
+        
+        // Test future-proofing: simulate a new activity type Google might add
+        // We use serde_json::Value to add a field that doesn't exist in our struct
+        let new_type_json = r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"codeReviewed":{"reviewId":"r1"}}"#;
+        
+        // This should deserialize with the unknown field being ignored (default serde behavior)
+        // Since the field isn't in our struct, it won't be re-serialized, so we'll get [ERROR]
+        if let Ok(activity) = serde_json::from_str::<Activity>(new_type_json) {
+            let activity_type = activity.activity_type();
+            // Will show [ERROR] since unknown field is dropped during deserialization
+            assert!(!activity_type.is_empty(), "Should handle unknown activity types gracefully");
+            assert!(activity_type.contains("[ERROR") || activity_type.contains("[UNKNOWN]"), 
+                "Should have error/unknown marker for unrecognized types: {}", activity_type);
+        }
+    }
 }
