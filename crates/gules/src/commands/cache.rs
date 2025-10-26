@@ -11,7 +11,10 @@ pub async fn handle_cache_stats() -> Result<()> {
 
     println!("Activity Cache Statistics");
     println!("═══════════════════════════");
-    println!("Status: {}", if stats.enabled { "Enabled" } else { "Disabled" });
+    println!(
+        "Status: {}",
+        if stats.enabled { "Enabled" } else { "Disabled" }
+    );
     println!("Location: {}", stats.cache_dir);
     println!();
     println!("Sessions: {}/{}", stats.total_sessions, stats.max_sessions);
@@ -40,7 +43,10 @@ pub async fn handle_cache_stats() -> Result<()> {
                     // File deleted but metadata not yet updated - safe to ignore
                 }
                 Err(e) => {
-                    eprintln!("Warning: Failed to load cache for session {}: {}", session_id, e);
+                    eprintln!(
+                        "Warning: Failed to load cache for session {}: {}",
+                        session_id, e
+                    );
                 }
             }
         }

@@ -19,12 +19,15 @@ pub enum OutputFormat {
 }
 
 impl OutputFormat {
-    pub fn from_str(s: &str) -> Result<Self> {
+    pub fn parse(s: &str) -> Result<Self> {
         match s.to_lowercase().as_str() {
             "json" => Ok(Self::Json),
             "table" => Ok(Self::Table),
             "full" => Ok(Self::Full),
-            _ => anyhow::bail!("Unknown output format: {}. Valid options: json, table, full", s),
+            _ => anyhow::bail!(
+                "Unknown output format: {}. Valid options: json, table, full",
+                s
+            ),
         }
     }
 }
@@ -455,45 +458,52 @@ pub async fn handle_sessions_formatted(
     let sessions = response.sessions;
 
     // Apply filters
-    let filtered: Vec<_> = sessions.into_iter().filter(|session| {
-        // State filter
-        if let Some(ref state_filter) = state {
-            if let Some(ref session_state) = session.state {
-                let state_matches = match state_filter.to_lowercase().as_str() {
-                    "active" => matches!(
-                        session_state,
-                        jules_rs::State::Queued
-                            | jules_rs::State::Planning
-                            | jules_rs::State::AwaitingPlanApproval
-                            | jules_rs::State::AwaitingUserFeedback
-                            | jules_rs::State::InProgress
-                    ),
-                    "completed" => matches!(session_state, jules_rs::State::Completed),
-                    "failed" => matches!(session_state, jules_rs::State::Failed),
-                    "paused" => matches!(session_state, jules_rs::State::Paused),
-                    _ => true,
-                };
-                if !state_matches {
+    let filtered: Vec<_> = sessions
+        .into_iter()
+        .filter(|session| {
+            // State filter
+            if let Some(ref state_filter) = state {
+                if let Some(ref session_state) = session.state {
+                    let state_matches = match state_filter.to_lowercase().as_str() {
+                        "active" => matches!(
+                            session_state,
+                            jules_rs::State::Queued
+                                | jules_rs::State::Planning
+                                | jules_rs::State::AwaitingPlanApproval
+                                | jules_rs::State::AwaitingUserFeedback
+                                | jules_rs::State::InProgress
+                        ),
+                        "completed" => matches!(session_state, jules_rs::State::Completed),
+                        "failed" => matches!(session_state, jules_rs::State::Failed),
+                        "paused" => matches!(session_state, jules_rs::State::Paused),
+                        _ => true,
+                    };
+                    if !state_matches {
+                        return false;
+                    }
+                }
+            }
+
+            // Search filter
+            if let Some(ref search_term) = search {
+                let search_lower = search_term.to_lowercase();
+                let title_match = session
+                    .title
+                    .as_ref()
+                    .map(|t| t.to_lowercase().contains(&search_lower))
+                    .unwrap_or(false);
+                let prompt_match = session.prompt.to_lowercase().contains(&search_lower);
+                if !title_match && !prompt_match {
                     return false;
                 }
             }
-        }
 
-        // Search filter
-        if let Some(ref search_term) = search {
-            let search_lower = search_term.to_lowercase();
-            let title_match = session.title.as_ref().map(|t| t.to_lowercase().contains(&search_lower)).unwrap_or(false);
-            let prompt_match = session.prompt.to_lowercase().contains(&search_lower);
-            if !title_match && !prompt_match {
-                return false;
-            }
-        }
-
-        true
-    }).collect();
+            true
+        })
+        .collect();
 
     // Output based on format
-    let output_format = OutputFormat::from_str(format)?;
+    let output_format = OutputFormat::parse(format)?;
     match output_format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string_pretty(&filtered)?);
@@ -520,7 +530,7 @@ pub async fn handle_session_formatted(id: &str, format: &str) -> Result<()> {
 
     let session = client.get_session(id).await?;
 
-    let output_format = OutputFormat::from_str(format)?;
+    let output_format = OutputFormat::parse(format)?;
     match output_format {
         OutputFormat::Json | OutputFormat::Full => {
             println!("{}", serde_json::to_string_pretty(&session)?);
@@ -534,17 +544,29 @@ pub async fn handle_session_formatted(id: &str, format: &str) -> Result<()> {
 }
 
 /// Handle active sessions with format support
-pub async fn handle_active_formatted(search: Option<String>, limit: u32, format: &str) -> Result<()> {
+pub async fn handle_active_formatted(
+    search: Option<String>,
+    limit: u32,
+    format: &str,
+) -> Result<()> {
     handle_sessions_formatted(Some("active".to_string()), search, limit, format).await
 }
 
 /// Handle completed sessions with format support
-pub async fn handle_completed_formatted(search: Option<String>, limit: u32, format: &str) -> Result<()> {
+pub async fn handle_completed_formatted(
+    search: Option<String>,
+    limit: u32,
+    format: &str,
+) -> Result<()> {
     handle_sessions_formatted(Some("completed".to_string()), search, limit, format).await
 }
 
 /// Handle failed sessions with format support
-pub async fn handle_failed_formatted(search: Option<String>, limit: u32, format: &str) -> Result<()> {
+pub async fn handle_failed_formatted(
+    search: Option<String>,
+    limit: u32,
+    format: &str,
+) -> Result<()> {
     handle_sessions_formatted(Some("failed".to_string()), search, limit, format).await
 }
 
@@ -571,9 +593,8 @@ pub async fn handle_create_formatted(
     // Build source context with optional branch
     let source_context = jules_rs::types::session::SourceContext {
         source: source.clone(),
-        github_repo_context: branch.map(|b| jules_rs::types::session::GitHubRepoContext {
-            starting_branch: b,
-        }),
+        github_repo_context: branch
+            .map(|b| jules_rs::types::session::GitHubRepoContext { starting_branch: b }),
     };
 
     let request = jules_rs::types::session::CreateSessionRequest {
@@ -586,7 +607,7 @@ pub async fn handle_create_formatted(
 
     let session = client.create_session(request).await?;
 
-    let output_format = OutputFormat::from_str(format)?;
+    let output_format = OutputFormat::parse(format)?;
     match output_format {
         OutputFormat::Json | OutputFormat::Full => {
             println!("{}", serde_json::to_string_pretty(&session)?);
@@ -601,15 +622,21 @@ pub async fn handle_create_formatted(
 }
 
 /// Handle sources command with format support
-pub async fn handle_sources_formatted(filter: Option<String>, limit: u32, format: &str) -> Result<()> {
+pub async fn handle_sources_formatted(
+    filter: Option<String>,
+    limit: u32,
+    format: &str,
+) -> Result<()> {
     let config = load_config()?;
     let api_key = config.api_key.context("API key not configured")?;
     let client = JulesClient::new(&api_key);
 
-    let response = client.list_sources(filter.as_deref(), Some(limit), None).await?;
+    let response = client
+        .list_sources(filter.as_deref(), Some(limit), None)
+        .await?;
     let sources = response.sources;
 
-    let output_format = OutputFormat::from_str(format)?;
+    let output_format = OutputFormat::parse(format)?;
     match output_format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string_pretty(&sources)?);
@@ -636,7 +663,7 @@ pub async fn handle_source_formatted(id: &str, format: &str) -> Result<()> {
 
     let source = client.get_source(id).await?;
 
-    let output_format = OutputFormat::from_str(format)?;
+    let output_format = OutputFormat::parse(format)?;
     match output_format {
         OutputFormat::Json | OutputFormat::Full => {
             println!("{}", serde_json::to_string_pretty(&source)?);
@@ -655,10 +682,12 @@ pub async fn handle_activities_formatted(session_id: &str, limit: u32, format: &
     let api_key = config.api_key.context("API key not configured")?;
     let client = JulesClient::new(&api_key);
 
-    let response = client.list_activities(session_id, Some(limit), None).await?;
+    let response = client
+        .list_activities(session_id, Some(limit), None)
+        .await?;
     let activities = response.activities;
 
-    let output_format = OutputFormat::from_str(format)?;
+    let output_format = OutputFormat::parse(format)?;
     match output_format {
         OutputFormat::Json => {
             println!("{}", serde_json::to_string_pretty(&activities)?);
@@ -679,14 +708,18 @@ pub async fn handle_activities_formatted(session_id: &str, limit: u32, format: &
 }
 
 /// Handle activity command with format support
-pub async fn handle_activity_formatted(session_id: &str, activity_id: &str, format: &str) -> Result<()> {
+pub async fn handle_activity_formatted(
+    session_id: &str,
+    activity_id: &str,
+    format: &str,
+) -> Result<()> {
     let config = load_config()?;
     let api_key = config.api_key.context("API key not configured")?;
     let client = JulesClient::new(&api_key);
 
     let activity = client.get_activity(session_id, activity_id).await?;
 
-    let output_format = OutputFormat::from_str(format)?;
+    let output_format = OutputFormat::parse(format)?;
     match output_format {
         OutputFormat::Json | OutputFormat::Full => {
             println!("{}", serde_json::to_string_pretty(&activity)?);

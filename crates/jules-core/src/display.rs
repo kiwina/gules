@@ -374,15 +374,11 @@ pub fn display_artifact_summary(artifact: &Artifact) {
         } else {
             command.to_string()
         };
-        let exit_status = bash.exit_code
+        let exit_status = bash
+            .exit_code
             .map(|c| format!("{}", c))
             .unwrap_or_else(|| "unknown".to_string());
-        println!(
-            "  {} {} (exit: {})",
-            "🐚".cyan(),
-            cmd_preview,
-            exit_status
-        );
+        println!("  {} {} (exit: {})", "🐚".cyan(), cmd_preview, exit_status);
     }
 
     if let Some(change_set) = &artifact.change_set {
@@ -507,7 +503,9 @@ pub fn print_activities_table(activities: &[&Activity]) {
         return;
     }
 
-    use comfy_table::{presets::UTF8_FULL_CONDENSED, Cell, CellAlignment, ContentArrangement, Table};
+    use comfy_table::{
+        presets::UTF8_FULL_CONDENSED, Cell, CellAlignment, ContentArrangement, Table,
+    };
 
     let mut table = Table::new();
     table

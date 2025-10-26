@@ -1,5 +1,6 @@
 //! Integration tests for extended commands (watch, monitor, issue-status, pr-status)
 
+use gules::extended_commands::OutputFormat;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -32,6 +33,51 @@ impl MockSession {
         self.activities_count = count;
         self
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// OUTPUT FORMAT TESTS
+// ─────────────────────────────────────────────────────────────────────────
+
+#[test]
+fn test_output_format_parse_json() {
+    let format = OutputFormat::parse("json").unwrap();
+    assert!(matches!(format, OutputFormat::Json));
+}
+
+#[test]
+fn test_output_format_parse_table() {
+    let format = OutputFormat::parse("table").unwrap();
+    assert!(matches!(format, OutputFormat::Table));
+}
+
+#[test]
+fn test_output_format_parse_full() {
+    let format = OutputFormat::parse("full").unwrap();
+    assert!(matches!(format, OutputFormat::Full));
+}
+
+#[test]
+fn test_output_format_parse_case_insensitive() {
+    assert!(matches!(OutputFormat::parse("JSON").unwrap(), OutputFormat::Json));
+    assert!(matches!(OutputFormat::parse("Table").unwrap(), OutputFormat::Table));
+    assert!(matches!(OutputFormat::parse("FULL").unwrap(), OutputFormat::Full));
+}
+
+#[test]
+fn test_output_format_parse_invalid() {
+    let result = OutputFormat::parse("invalid");
+    assert!(result.is_err());
+    
+    let err_msg = result.unwrap_err().to_string();
+    assert!(err_msg.contains("Unknown output format"));
+    assert!(err_msg.contains("invalid"));
+}
+
+#[test]
+fn test_output_format_parse_empty() {
+    let result = OutputFormat::parse("");
+    assert!(result.is_err());
 }
 
 // ─────────────────────────────────────────────────────────────────────────

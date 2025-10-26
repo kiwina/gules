@@ -35,7 +35,7 @@ impl Activity {
     /// Get activity type as human-readable string by parsing the JSON structure
     /// This method is resilient to API changes - if Google adds new activity types,
     /// we'll still display them correctly by extracting the field name from the data.
-    /// 
+    ///
     /// Returns:
     /// - Known activity types: "Agent Messaged", "Progress Updated", etc.
     /// - Unknown activity types: "New Type [UNKNOWN]" - indicates SDK needs updating
@@ -47,20 +47,32 @@ impl Activity {
             if let Some(obj) = value.as_object() {
                 // Known activity type fields (in camelCase from API)
                 let activity_fields = [
-                    "agentMessaged", "userMessaged", "planGenerated", "planApproved",
-                    "progressUpdated", "sessionCompleted", "sessionFailed"
+                    "agentMessaged",
+                    "userMessaged",
+                    "planGenerated",
+                    "planApproved",
+                    "progressUpdated",
+                    "sessionCompleted",
+                    "sessionFailed",
                 ];
-                
+
                 // Find which activity field is set
                 for field in activity_fields {
                     if obj.contains_key(field) {
                         return camel_to_title_case(field);
                     }
                 }
-                
+
                 // If it's a new activity type we don't know about yet,
                 // find any camelCase field that isn't a standard Activity field
-                let standard_fields = ["name", "id", "description", "createTime", "originator", "artifacts"];
+                let standard_fields = [
+                    "name",
+                    "id",
+                    "description",
+                    "createTime",
+                    "originator",
+                    "artifacts",
+                ];
                 for (key, val) in obj.iter() {
                     if !standard_fields.contains(&key.as_str()) && !val.is_null() {
                         // Found a non-standard field - probably a new activity type
@@ -70,7 +82,7 @@ impl Activity {
                 }
             }
         }
-        
+
         // Fallback if serialization fails or no activity type found (shouldn't happen)
         // Make it obvious with [ERROR] marker that something went wrong
         "[ERROR: No Activity Type]".to_string()
@@ -79,12 +91,18 @@ impl Activity {
     /// Get activity content as string
     pub fn content(&self) -> Option<String> {
         if let Some(msg) = &self.agent_messaged {
-            msg.agent_message.clone().or(Some("[Empty agent message]".to_string()))
+            msg.agent_message
+                .clone()
+                .or(Some("[Empty agent message]".to_string()))
         } else if let Some(msg) = &self.user_messaged {
-            msg.user_message.clone().or(Some("[Empty user message]".to_string()))
+            msg.user_message
+                .clone()
+                .or(Some("[Empty user message]".to_string()))
         } else if let Some(progress) = &self.progress_updated {
             // Check if there's a bash command in artifacts
-            let bash_cmd = self.artifacts.iter()
+            let bash_cmd = self
+                .artifacts
+                .iter()
                 .find_map(|a| a.bash_output.as_ref())
                 .and_then(|b| {
                     b.command.as_ref().map(|cmd| {
@@ -92,7 +110,7 @@ impl Activity {
                         cmd.trim().replace('\n', " ").replace("  ", " ")
                     })
                 });
-            
+
             if let Some(cmd) = bash_cmd {
                 // Show the command cleanly without extra "Command:" prefix
                 Some(format!("Ran: {}", cmd))
@@ -102,11 +120,12 @@ impl Activity {
                 Some(format!("{}: {}", title, desc))
             }
         } else {
-            self.session_failed
-                .as_ref()
-                .and_then(|failed| {
-                    failed.reason.clone().or(Some("[Unknown failure reason]".to_string()))
-                })
+            self.session_failed.as_ref().and_then(|failed| {
+                failed
+                    .reason
+                    .clone()
+                    .or(Some("[Unknown failure reason]".to_string()))
+            })
         }
     }
 }
@@ -116,14 +135,14 @@ impl Activity {
 fn camel_to_title_case(s: &str) -> String {
     let mut result = String::new();
     let mut chars = s.chars().peekable();
-    
+
     // Capitalize the first character
     if let Some(first) = chars.next() {
         result.push(first.to_uppercase().next().unwrap());
     }
-    
+
     // Process remaining characters
-    while let Some(ch) = chars.next() {
+    for ch in chars {
         if ch.is_uppercase() {
             // Add space before uppercase letter
             result.push(' ');
@@ -132,7 +151,7 @@ fn camel_to_title_case(s: &str) -> String {
             result.push(ch);
         }
     }
-    
+
     result
 }
 
@@ -268,7 +287,7 @@ mod tests {
         assert_eq!(camel_to_title_case("sessionCompleted"), "Session Completed");
         assert_eq!(camel_to_title_case("sessionFailed"), "Session Failed");
         assert_eq!(camel_to_title_case("unknown"), "Unknown");
-        
+
         // Test edge cases
         assert_eq!(camel_to_title_case("helloWorld"), "Hello World");
         assert_eq!(camel_to_title_case("HTTPRequest"), "H T T P Request");
@@ -280,20 +299,45 @@ mod tests {
     fn test_activity_type_conversion() {
         // Test each known activity type
         let test_cases = vec![
-            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"agentMessaged":{"agentMessage":"test"}}"#, "Agent Messaged"),
-            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"user","artifacts":[],"userMessaged":{"userMessage":"test"}}"#, "User Messaged"),
-            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"planGenerated":{"plan":{"id":"p1","steps":[]}}}"#, "Plan Generated"),
-            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"planApproved":{"planId":"p1"}}"#, "Plan Approved"),
-            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"progressUpdated":{"description":"test"}}"#, "Progress Updated"),
-            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"system","artifacts":[],"sessionCompleted":{}}"#, "Session Completed"),
-            (r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"system","artifacts":[],"sessionFailed":{"reason":"error"}}"#, "Session Failed"),
+            (
+                r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"agentMessaged":{"agentMessage":"test"}}"#,
+                "Agent Messaged",
+            ),
+            (
+                r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"user","artifacts":[],"userMessaged":{"userMessage":"test"}}"#,
+                "User Messaged",
+            ),
+            (
+                r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"planGenerated":{"plan":{"id":"p1","steps":[]}}}"#,
+                "Plan Generated",
+            ),
+            (
+                r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"planApproved":{"planId":"p1"}}"#,
+                "Plan Approved",
+            ),
+            (
+                r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"progressUpdated":{"description":"test"}}"#,
+                "Progress Updated",
+            ),
+            (
+                r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"system","artifacts":[],"sessionCompleted":{}}"#,
+                "Session Completed",
+            ),
+            (
+                r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"system","artifacts":[],"sessionFailed":{"reason":"error"}}"#,
+                "Session Failed",
+            ),
         ];
-        
+
         for (json, expected_type) in test_cases {
             let activity: Activity = serde_json::from_str(json)
                 .unwrap_or_else(|e| panic!("Failed to parse JSON for {}: {}", expected_type, e));
-            assert_eq!(activity.activity_type(), expected_type, 
-                "Activity type mismatch for {}", expected_type);
+            assert_eq!(
+                activity.activity_type(),
+                expected_type,
+                "Activity type mismatch for {}",
+                expected_type
+            );
         }
     }
 
@@ -303,21 +347,34 @@ mod tests {
         let no_type_json = r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[]}"#;
         let activity: Activity = serde_json::from_str(no_type_json).unwrap();
         let activity_type = activity.activity_type();
-        assert!(!activity_type.is_empty(), "Should return some activity type");
-        assert!(activity_type.contains("[ERROR"), "Should have error marker: {}", activity_type);
-        
+        assert!(
+            !activity_type.is_empty(),
+            "Should return some activity type"
+        );
+        assert!(
+            activity_type.contains("[ERROR"),
+            "Should have error marker: {}",
+            activity_type
+        );
+
         // Test future-proofing: simulate a new activity type Google might add
         // We use serde_json::Value to add a field that doesn't exist in our struct
         let new_type_json = r#"{"name":"s/1/a/1","id":"1","createTime":"2025-10-26T00:00:00Z","originator":"agent","artifacts":[],"codeReviewed":{"reviewId":"r1"}}"#;
-        
+
         // This should deserialize with the unknown field being ignored (default serde behavior)
         // Since the field isn't in our struct, it won't be re-serialized, so we'll get [ERROR]
         if let Ok(activity) = serde_json::from_str::<Activity>(new_type_json) {
             let activity_type = activity.activity_type();
             // Will show [ERROR] since unknown field is dropped during deserialization
-            assert!(!activity_type.is_empty(), "Should handle unknown activity types gracefully");
-            assert!(activity_type.contains("[ERROR") || activity_type.contains("[UNKNOWN]"), 
-                "Should have error/unknown marker for unrecognized types: {}", activity_type);
+            assert!(
+                !activity_type.is_empty(),
+                "Should handle unknown activity types gracefully"
+            );
+            assert!(
+                activity_type.contains("[ERROR") || activity_type.contains("[UNKNOWN]"),
+                "Should have error/unknown marker for unrecognized types: {}",
+                activity_type
+            );
         }
     }
 }

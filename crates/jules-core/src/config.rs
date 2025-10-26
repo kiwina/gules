@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 pub const DEFAULT_JULES_API_BASE: &str = "https://jules.googleapis.com/v1alpha";
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct Config {
     #[serde(default)]
     pub api_key: Option<String>,
@@ -19,7 +19,7 @@ pub struct Config {
     pub cache: CacheConfig,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CacheConfig {
     #[serde(default = "default_cache_enabled")]
     pub enabled: bool,

@@ -34,19 +34,22 @@ setup-hooks:
 
 # Development
 build:
-	cargo build --release --features mcp
-
-test:
-	cargo test --all --features mcp -- --nocapture
+	cargo build --release --all
 
 run:
-	cargo run --features mcp -- $(ARGS)
+	cargo run --bin gules --features mcp
+
+clippy:
+	cargo clippy --workspace --all-targets -- -D warnings
+
+test:
+	cargo nextest run --workspace
 
 clean:
 	cargo clean
 
 install: build
-	cargo install --path . --features mcp
+	cargo install --path crates/gules --features mcp --force
 
 # Code Quality
 fmt:

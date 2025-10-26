@@ -28,12 +28,15 @@ pub enum OutputFormat {
 }
 
 impl OutputFormat {
-    pub fn from_str(s: &str) -> anyhow::Result<Self> {
+    pub fn parse(s: &str) -> anyhow::Result<Self> {
         match s.to_lowercase().as_str() {
             "json" => Ok(Self::Json),
             "table" => Ok(Self::Table),
             "full" => Ok(Self::Full),
-            _ => anyhow::bail!("Unknown output format: {}. Valid options: json, table, full", s),
+            _ => anyhow::bail!(
+                "Unknown output format: {}. Valid options: json, table, full",
+                s
+            ),
         }
     }
 }
@@ -319,13 +322,25 @@ async fn main() -> anyhow::Result<()> {
         Some(Commands::Session { id, format }) => {
             extended_commands::handle_session_formatted(&id, &format).await?;
         }
-        Some(Commands::Active { search, limit, format }) => {
+        Some(Commands::Active {
+            search,
+            limit,
+            format,
+        }) => {
             extended_commands::handle_active_formatted(search, limit, &format).await?;
         }
-        Some(Commands::Completed { search, limit, format }) => {
+        Some(Commands::Completed {
+            search,
+            limit,
+            format,
+        }) => {
             extended_commands::handle_completed_formatted(search, limit, &format).await?;
         }
-        Some(Commands::Failed { search, limit, format }) => {
+        Some(Commands::Failed {
+            search,
+            limit,
+            format,
+        }) => {
             extended_commands::handle_failed_formatted(search, limit, &format).await?;
         }
         Some(Commands::Create {
@@ -345,15 +360,24 @@ async fn main() -> anyhow::Result<()> {
                 require_approval,
                 &automation_mode,
                 &format,
-            ).await?;
+            )
+            .await?;
         }
-        Some(Commands::Sources { filter, limit, format }) => {
+        Some(Commands::Sources {
+            filter,
+            limit,
+            format,
+        }) => {
             extended_commands::handle_sources_formatted(filter, limit, &format).await?;
         }
         Some(Commands::Source { id, format }) => {
             extended_commands::handle_source_formatted(&id, &format).await?;
         }
-        Some(Commands::Activities { session_id, limit, format }) => {
+        Some(Commands::Activities {
+            session_id,
+            limit,
+            format,
+        }) => {
             extended_commands::handle_activities_formatted(&session_id, limit, &format).await?;
         }
         Some(Commands::Activity {
@@ -361,7 +385,8 @@ async fn main() -> anyhow::Result<()> {
             activity_id,
             format,
         }) => {
-            extended_commands::handle_activity_formatted(&session_id, &activity_id, &format).await?;
+            extended_commands::handle_activity_formatted(&session_id, &activity_id, &format)
+                .await?;
         }
         Some(Commands::SendMessage {
             session_id,
@@ -419,12 +444,12 @@ async fn main() -> anyhow::Result<()> {
             // Parse type filters
             let type_filters: Result<Vec<ActivityTypeFilter>, _> = r#type
                 .iter()
-                .map(|s| ActivityTypeFilter::from_str(s))
+                .map(|s| ActivityTypeFilter::parse(s))
                 .collect();
             let type_filters = type_filters?;
 
             // Parse output format
-            let output_format = OutputFormat::from_str(&format)?;
+            let output_format = OutputFormat::parse(&format)?;
 
             filter_activities(
                 &session_id,

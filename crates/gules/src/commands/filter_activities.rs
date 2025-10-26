@@ -20,7 +20,7 @@ pub enum ActivityTypeFilter {
 }
 
 impl ActivityTypeFilter {
-    pub fn from_str(s: &str) -> Result<Self> {
+    pub fn parse(s: &str) -> Result<Self> {
         match s.to_lowercase().as_str() {
             "agent-message" | "agent" => Ok(Self::AgentMessage),
             "user-message" | "user" => Ok(Self::UserMessage),
@@ -60,13 +60,16 @@ pub enum OutputFormat {
 }
 
 impl OutputFormat {
-    pub fn from_str(s: &str) -> Result<Self> {
+    pub fn parse(s: &str) -> Result<Self> {
         match s.to_lowercase().as_str() {
             "json" => Ok(Self::Json),
             "table" => Ok(Self::Table),
             "full" => Ok(Self::Full),
             "content" | "content-only" => Ok(Self::ContentOnly),
-            _ => anyhow::bail!("Unknown output format: {}. Valid options: json, table, full, content-only", s),
+            _ => anyhow::bail!(
+                "Unknown output format: {}. Valid options: json, table, full, content-only",
+                s
+            ),
         }
     }
 }
@@ -203,7 +206,8 @@ fn display_activities(activities: &[Activity], format: OutputFormat) -> Result<(
                             println!("    Type: Bash Output");
                             let command = bash.command.as_deref().unwrap_or("[Empty command]");
                             println!("    Command: {}", command);
-                            let exit_status = bash.exit_code
+                            let exit_status = bash
+                                .exit_code
                                 .map(|c| c.to_string())
                                 .unwrap_or_else(|| "unknown".to_string());
                             println!("    Exit Code: {}", exit_status);

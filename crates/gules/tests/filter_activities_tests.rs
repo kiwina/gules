@@ -6,71 +6,71 @@ use jules_rs::types::activity::*;
 use gules::commands::filter_activities::*;
 
 #[test]
-fn test_activity_type_filter_from_str() {
+fn test_activity_type_filter_parse() {
     // Test all valid type strings
     assert!(matches!(
-        ActivityTypeFilter::from_str("agent-message").unwrap(),
+        ActivityTypeFilter::parse("agent-message").unwrap(),
         ActivityTypeFilter::AgentMessage
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("agent").unwrap(),
+        ActivityTypeFilter::parse("agent").unwrap(),
         ActivityTypeFilter::AgentMessage
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("user-message").unwrap(),
+        ActivityTypeFilter::parse("user-message").unwrap(),
         ActivityTypeFilter::UserMessage
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("user").unwrap(),
+        ActivityTypeFilter::parse("user").unwrap(),
         ActivityTypeFilter::UserMessage
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("plan").unwrap(),
+        ActivityTypeFilter::parse("plan").unwrap(),
         ActivityTypeFilter::Plan
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("plan-generated").unwrap(),
+        ActivityTypeFilter::parse("plan-generated").unwrap(),
         ActivityTypeFilter::Plan
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("plan-approved").unwrap(),
+        ActivityTypeFilter::parse("plan-approved").unwrap(),
         ActivityTypeFilter::PlanApproved
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("approved").unwrap(),
+        ActivityTypeFilter::parse("approved").unwrap(),
         ActivityTypeFilter::PlanApproved
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("progress").unwrap(),
+        ActivityTypeFilter::parse("progress").unwrap(),
         ActivityTypeFilter::Progress
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("progress-updated").unwrap(),
+        ActivityTypeFilter::parse("progress-updated").unwrap(),
         ActivityTypeFilter::Progress
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("completed").unwrap(),
+        ActivityTypeFilter::parse("completed").unwrap(),
         ActivityTypeFilter::Completed
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("session-completed").unwrap(),
+        ActivityTypeFilter::parse("session-completed").unwrap(),
         ActivityTypeFilter::Completed
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("failed").unwrap(),
+        ActivityTypeFilter::parse("failed").unwrap(),
         ActivityTypeFilter::Failed
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("session-failed").unwrap(),
+        ActivityTypeFilter::parse("session-failed").unwrap(),
         ActivityTypeFilter::Failed
     ));
     assert!(matches!(
-        ActivityTypeFilter::from_str("error").unwrap(),
+        ActivityTypeFilter::parse("error").unwrap(),
         ActivityTypeFilter::Failed
     ));
 
     // Test invalid string
-    assert!(ActivityTypeFilter::from_str("invalid-type").is_err());
+    assert!(ActivityTypeFilter::parse("invalid-type").is_err());
 }
 
 #[test]
@@ -146,30 +146,30 @@ fn test_activity_type_filter_matches_completed() {
 }
 
 #[test]
-fn test_output_format_from_str() {
+fn test_output_format_parse() {
     assert!(matches!(
-        OutputFormat::from_str("table").unwrap(),
+        OutputFormat::parse("table").unwrap(),
         OutputFormat::Table
     ));
     assert!(matches!(
-        OutputFormat::from_str("json").unwrap(),
+        OutputFormat::parse("json").unwrap(),
         OutputFormat::Json
     ));
     assert!(matches!(
-        OutputFormat::from_str("full").unwrap(),
+        OutputFormat::parse("full").unwrap(),
         OutputFormat::Full
     ));
     assert!(matches!(
-        OutputFormat::from_str("content").unwrap(),
+        OutputFormat::parse("content").unwrap(),
         OutputFormat::ContentOnly
     ));
     assert!(matches!(
-        OutputFormat::from_str("content-only").unwrap(),
+        OutputFormat::parse("content-only").unwrap(),
         OutputFormat::ContentOnly
     ));
 
     // Test invalid format
-    assert!(OutputFormat::from_str("invalid").is_err());
+    assert!(OutputFormat::parse("invalid").is_err());
 }
 
 #[test]
@@ -177,10 +177,7 @@ fn test_activity_with_bash_output() {
     let mut activity = create_test_activity("1");
 
     // Activity without bash output
-    assert!(activity
-        .artifacts
-        .iter()
-        .all(|a| a.bash_output.is_none()));
+    assert!(activity.artifacts.iter().all(|a| a.bash_output.is_none()));
 
     // Add bash output artifact
     activity.artifacts.push(Artifact {
@@ -194,10 +191,7 @@ fn test_activity_with_bash_output() {
     });
 
     // Now it has bash output
-    assert!(activity
-        .artifacts
-        .iter()
-        .any(|a| a.bash_output.is_some()));
+    assert!(activity.artifacts.iter().any(|a| a.bash_output.is_some()));
 }
 
 #[test]
@@ -232,10 +226,7 @@ fn test_activity_content_extraction() {
     activity.session_failed = Some(SessionFailed {
         reason: Some("Build failed".to_string()),
     });
-    assert_eq!(
-        activity.content(),
-        Some("Build failed".to_string())
-    );
+    assert_eq!(activity.content(), Some("Build failed".to_string()));
 
     // Test activity with no content
     let activity = create_test_activity("5");
@@ -276,8 +267,11 @@ fn test_activity_type_string() {
     let activity = create_test_activity("5");
     // Activity with no type should return error marker
     let activity_type = activity.activity_type();
-    assert!(activity_type.contains("[ERROR") || activity_type.contains("[UNKNOWN]"), 
-        "Expected error or unknown marker, got: {}", activity_type);
+    assert!(
+        activity_type.contains("[ERROR") || activity_type.contains("[UNKNOWN]"),
+        "Expected error or unknown marker, got: {}",
+        activity_type
+    );
 }
 
 #[test]

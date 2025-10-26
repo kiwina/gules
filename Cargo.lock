@@ -995,6 +995,11 @@ dependencies = [
  "clap",
  "jules-core",
  "jules-rs",
+ "mockito",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "toml",
 ]
 
 [[package]]
@@ -1020,12 +1025,15 @@ dependencies = [
  "anyhow",
  "jules-core",
  "jules-rs",
+ "mockito",
  "rmcp",
  "schemars",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "tokio-util",
+ "toml",
  "tracing",
  "tracing-subscriber",
 ]

@@ -53,7 +53,7 @@ pub struct SessionCache {
 }
 
 /// Cache metadata for FIFO eviction
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CacheMetadata {
     /// Session IDs in order of first access (oldest first)
     pub access_order: Vec<String>,
@@ -61,19 +61,10 @@ pub struct CacheMetadata {
     pub config: ActivityCacheConfig,
 }
 
-impl Default for CacheMetadata {
-    fn default() -> Self {
-        Self {
-            access_order: Vec::new(),
-            config: ActivityCacheConfig::default(),
-        }
-    }
-}
-
 /// Get the cache directory path
 pub fn get_cache_dir() -> Result<PathBuf> {
-    let cache_dir = dirs::cache_dir()
-        .ok_or_else(|| anyhow::anyhow!("Could not determine cache directory"))?;
+    let cache_dir =
+        dirs::cache_dir().ok_or_else(|| anyhow::anyhow!("Could not determine cache directory"))?;
     Ok(cache_dir.join("gules").join("activities"))
 }
 
@@ -108,7 +99,8 @@ pub fn load_metadata() -> Result<CacheMetadata> {
 /// Save cache metadata
 pub fn save_metadata(metadata: &CacheMetadata) -> Result<()> {
     let metadata_path = get_metadata_path()?;
-    let contents = serde_json::to_string_pretty(metadata).context("Failed to serialize metadata")?;
+    let contents =
+        serde_json::to_string_pretty(metadata).context("Failed to serialize metadata")?;
     fs::write(&metadata_path, contents).context("Failed to write metadata")?;
     Ok(())
 }
@@ -141,9 +133,7 @@ pub fn save_session_cache(cache: &SessionCache) -> Result<()> {
     let mut metadata = load_metadata()?;
 
     // Remove from current position (if exists)
-    metadata
-        .access_order
-        .retain(|id| id != &cache.session_id);
+    metadata.access_order.retain(|id| id != &cache.session_id);
 
     // Add to end (most recently accessed)
     metadata.access_order.push(cache.session_id.clone());
@@ -151,12 +141,15 @@ pub fn save_session_cache(cache: &SessionCache) -> Result<()> {
     // FIFO eviction if needed
     if metadata.access_order.len() > metadata.config.max_sessions {
         let to_remove_count = metadata.access_order.len() - metadata.config.max_sessions;
-        let evicted_sessions: Vec<String> = metadata.access_order.drain(..to_remove_count).collect();
+        let evicted_sessions: Vec<String> =
+            metadata.access_order.drain(..to_remove_count).collect();
         for session_id in evicted_sessions {
             let cache_path = get_session_cache_path(&session_id)?;
             if cache_path.exists() {
-                fs::remove_file(&cache_path)
-                    .context(format!("Failed to delete evicted cache for session {}", session_id))?;
+                fs::remove_file(&cache_path).context(format!(
+                    "Failed to delete evicted cache for session {}",
+                    session_id
+                ))?;
             }
         }
     }
@@ -245,10 +238,7 @@ pub struct CacheStats {
 }
 
 /// Merge new activities into cache (deduplication by ID)
-pub fn merge_activities(
-    existing: Vec<Activity>,
-    new_activities: Vec<Activity>,
-) -> Vec<Activity> {
+pub fn merge_activities(existing: Vec<Activity>, new_activities: Vec<Activity>) -> Vec<Activity> {
     let mut merged: HashMap<String, Activity> = HashMap::new();
 
     // Add existing activities
@@ -307,7 +297,11 @@ pub async fn fetch_all_activities(
     // Fetch up to MAX_ACTIVITIES_TO_FETCH activities total
     while all_activities.len() < MAX_ACTIVITIES_TO_FETCH {
         let response = client
-            .list_activities(session_id, Some(ACTIVITIES_PAGE_SIZE), page_token.as_deref())
+            .list_activities(
+                session_id,
+                Some(ACTIVITIES_PAGE_SIZE),
+                page_token.as_deref(),
+            )
             .await?;
 
         all_activities.extend(response.activities);

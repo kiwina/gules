@@ -16,7 +16,7 @@
 # OS files
 .DS_Store
 Thumbs.db
-jules_api_docs
+references
 
 # Test data (may contain private information)
 activities.json
