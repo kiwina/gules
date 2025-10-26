@@ -277,24 +277,26 @@ pub fn display_timestamp(timestamp: &str) -> String {
 /// Display activity summary for CLI (concise) - use JSON for full details
 pub fn display_activity_summary(activity: &Activity) {
     match activity.activity_type().as_str() {
-        "Agent Message" => {
+        "Agent Messaged" => {
             if let Some(msg) = &activity.agent_messaged {
                 // Truncate long messages for CLI
-                let preview = if msg.agent_message.len() > 80 {
-                    format!("{}...", &msg.agent_message[..77])
+                let message = msg.agent_message.as_deref().unwrap_or("[Empty message]");
+                let preview = if message.len() > 80 {
+                    format!("{}...", &message[..77])
                 } else {
-                    msg.agent_message.clone()
+                    message.to_string()
                 };
                 println!("{} Agent: {}", "💬".blue(), preview);
             }
         }
-        "User Message" => {
+        "User Messaged" => {
             if let Some(msg) = &activity.user_messaged {
                 // Truncate long messages for CLI
-                let preview = if msg.user_message.len() > 80 {
-                    format!("{}...", &msg.user_message[..77])
+                let message = msg.user_message.as_deref().unwrap_or("[Empty message]");
+                let preview = if message.len() > 80 {
+                    format!("{}...", &message[..77])
                 } else {
-                    msg.user_message.clone()
+                    message.to_string()
                 };
                 println!("{} User: {}", "👤".green(), preview);
             }
@@ -326,7 +328,8 @@ pub fn display_activity_summary(activity: &Activity) {
         }
         "Session Failed" => {
             if let Some(failed) = &activity.session_failed {
-                println!("{} Session failed: {}", "✗".red(), failed.reason);
+                let reason = failed.reason.as_deref().unwrap_or("[Unknown reason]");
+                println!("{} Session failed: {}", "✗".red(), reason);
             } else {
                 println!("{} {}", "✗".red(), "Session failed".bold());
             }
@@ -345,10 +348,11 @@ pub fn display_plan_summary(plan: &Plan) {
     // Show first 3 step titles for context (truncated if long)
     for (i, step) in plan.steps.iter().enumerate().take(3) {
         let step_num = i + 1;
-        let title_preview = if step.title.len() > 60 {
-            format!("{}...", &step.title[..57])
+        let title = step.title.as_deref().unwrap_or("[Untitled step]");
+        let title_preview = if title.len() > 60 {
+            format!("{}...", &title[..57])
         } else {
-            step.title.clone()
+            title.to_string()
         };
         println!("  {}. {}", step_num, title_preview.dimmed());
     }
@@ -364,10 +368,11 @@ pub fn display_plan_summary(plan: &Plan) {
 pub fn display_artifact_summary(artifact: &Artifact) {
     if let Some(bash) = &artifact.bash_output {
         // Show command and exit code, truncate long commands
-        let cmd_preview = if bash.command.len() > 50 {
-            format!("{}...", &bash.command[..47])
+        let command = bash.command.as_deref().unwrap_or("[Empty command]");
+        let cmd_preview = if command.len() > 50 {
+            format!("{}...", &command[..47])
         } else {
-            bash.command.clone()
+            command.to_string()
         };
         let exit_status = bash.exit_code
             .map(|c| format!("{}", c))
@@ -399,7 +404,8 @@ pub fn display_artifact_summary(artifact: &Artifact) {
     }
 
     if let Some(media) = &artifact.media {
-        println!("  {} Media: {}", "🖼".purple(), media.mime_type);
+        let mime_type = media.mime_type.as_deref().unwrap_or("[Unknown type]");
+        println!("  {} Media: {}", "🖼".purple(), mime_type);
     }
 }
 

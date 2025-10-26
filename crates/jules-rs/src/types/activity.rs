@@ -79,16 +79,18 @@ impl Activity {
     /// Get activity content as string
     pub fn content(&self) -> Option<String> {
         if let Some(msg) = &self.agent_messaged {
-            Some(msg.agent_message.clone())
+            msg.agent_message.clone().or(Some("[Empty agent message]".to_string()))
         } else if let Some(msg) = &self.user_messaged {
-            Some(msg.user_message.clone())
+            msg.user_message.clone().or(Some("[Empty user message]".to_string()))
         } else if let Some(progress) = &self.progress_updated {
             // Check if there's a bash command in artifacts
             let bash_cmd = self.artifacts.iter()
                 .find_map(|a| a.bash_output.as_ref())
-                .map(|b| {
-                    // Clean up the command: trim whitespace and replace newlines with spaces
-                    b.command.trim().replace('\n', " ").replace("  ", " ")
+                .and_then(|b| {
+                    b.command.as_ref().map(|cmd| {
+                        // Clean up the command: trim whitespace and replace newlines with spaces
+                        cmd.trim().replace('\n', " ").replace("  ", " ")
+                    })
                 });
             
             if let Some(cmd) = bash_cmd {
@@ -102,7 +104,9 @@ impl Activity {
         } else {
             self.session_failed
                 .as_ref()
-                .map(|failed| format!("Session failed: {}", failed.reason))
+                .and_then(|failed| {
+                    failed.reason.clone().or(Some("[Unknown failure reason]".to_string()))
+                })
         }
     }
 }
@@ -134,14 +138,14 @@ fn camel_to_title_case(s: &str) -> String {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentMessaged {
-    #[serde(rename = "agentMessage")]
-    pub agent_message: String,
+    #[serde(rename = "agentMessage", skip_serializing_if = "Option::is_none")]
+    pub agent_message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserMessaged {
-    #[serde(rename = "userMessage")]
-    pub user_message: String,
+    #[serde(rename = "userMessage", skip_serializing_if = "Option::is_none")]
+    pub user_message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -161,7 +165,8 @@ pub struct Plan {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlanStep {
     pub id: String,
-    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -187,7 +192,8 @@ pub struct SessionCompleted {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionFailed {
-    pub reason: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// Artifact
@@ -223,15 +229,18 @@ pub struct GitPatch {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Media {
-    pub data: String, // Base64
-    #[serde(rename = "mimeType")]
-    pub mime_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<String>, // Base64
+    #[serde(rename = "mimeType", skip_serializing_if = "Option::is_none")]
+    pub mime_type: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BashOutput {
-    pub command: String,
-    pub output: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub command: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output: Option<String>,
     #[serde(rename = "exitCode", skip_serializing_if = "Option::is_none", default)]
     pub exit_code: Option<i32>,
 }

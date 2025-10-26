@@ -54,10 +54,14 @@ fn quick_validate_activities_json() {
                 for (j, artifact) in activity.artifacts.iter().enumerate() {
                     if let Some(bash) = &artifact.bash_output {
                         stats.bash_outputs += 1;
-                        assert!(!bash.command.is_empty(), 
-                            "Activity {} artifact {} has empty bash command", i, j);
-                        assert!(!bash.output.is_empty(),
-                            "Activity {} artifact {} has empty bash output", i, j);
+                        if let Some(cmd) = &bash.command {
+                            assert!(!cmd.is_empty(), 
+                                "Activity {} artifact {} has empty bash command", i, j);
+                        }
+                        if let Some(output) = &bash.output {
+                            assert!(!output.is_empty(),
+                                "Activity {} artifact {} has empty bash output", i, j);
+                        }
                         if bash.exit_code.is_none() {
                             stats.bash_without_exitcode += 1;
                         }

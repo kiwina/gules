@@ -124,13 +124,16 @@ pub struct SessionOutput {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PullRequest {
     /// PR URL
-    pub url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
 
     /// PR title
-    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
 
     /// PR description
-    pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 
 /// Create session request

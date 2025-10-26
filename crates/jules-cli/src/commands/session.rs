@@ -81,7 +81,11 @@ fn display_session_details(session: &jules_rs::types::session::Session) {
                 output
                     .pull_request
                     .as_ref()
-                    .map(|pr| format!("PR: {} ({})", pr.title, pr.url))
+                    .map(|pr| {
+                        let title = pr.title.as_deref().unwrap_or("[No title]");
+                        let url = pr.url.as_deref().unwrap_or("[No URL]");
+                        format!("PR: {} ({})", title, url)
+                    })
                     .unwrap_or_else(|| "No pull request".to_string())
             );
         }

@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.4] - 2025-10-27
+
+### Fixed
+- **SDK Resilience**: Made 11 non-critical String fields optional across jules-rs types
+  - **Activity fields**: `AgentMessaged.agent_message`, `UserMessaged.user_message`, `SessionFailed.reason`
+  - **BashOutput fields**: `command`, `output`
+  - **Media fields**: `data`, `mime_type`
+  - **PullRequest fields**: `url`, `title`, `description`
+  - **PlanStep fields**: `title`
+  - Prevents deserialization failures when Google's Jules API omits documented "required" fields
+  - All fields now handled gracefully with descriptive fallback markers
+
+### Changed
+- Updated display code across all crates with graceful fallback pattern: `field.as_deref().unwrap_or("[Default]")`
+- Descriptive markers for missing data: `[Empty message]`, `[No title]`, `[No output]`, `[Unknown reason]`
+- Makes missing data obvious to users while preventing crashes
+
+### Internal
+- jules-rs: 0.1.2 → 0.1.3
+- jules-core: 0.1.2 → 0.1.3
+- gules: 0.2.3 → 0.2.4
+- All 73 tests updated and passing
+
+---
+
 ## [0.2.2] - 2025-10-26
 
 ### Fixed

@@ -92,8 +92,10 @@ pub async fn handle_issue_status(issue: u32, owner: &str, repo: &str) -> Result<
                 if !session.outputs.is_empty() {
                     for output in &session.outputs {
                         if let Some(pr) = &output.pull_request {
-                            println!("  PR URL: {}", pr.url);
-                            println!("  PR Title: {}", pr.title);
+                            let url = pr.url.as_deref().unwrap_or("[No URL]");
+                            let title = pr.title.as_deref().unwrap_or("[No title]");
+                            println!("  PR URL: {}", url);
+                            println!("  PR Title: {}", title);
                         }
                     }
                 }
@@ -131,16 +133,21 @@ pub async fn handle_pr_status(session_id: &str) -> Result<()> {
         if let Some(pr) = output.pull_request {
             found_pr = true;
             println!("PR Information for session {}:\n", session_id);
-            println!("  Title: {}", pr.title);
-            println!("  URL: {}", pr.url);
-            println!("  Description: {}", pr.description);
+            let title = pr.title.as_deref().unwrap_or("[No title]");
+            let url = pr.url.as_deref().unwrap_or("[No URL]");
+            let description = pr.description.as_deref().unwrap_or("[No description]");
+            println!("  Title: {}", title);
+            println!("  URL: {}", url);
+            println!("  Description: {}", description);
 
             // Optionally fetch PR details via gh CLI
             if is_gh_cli_available() {
-                if let Ok(pr_details) = get_pr_details_via_gh(&pr.url) {
-                    println!("\nGitHub PR Details:");
-                    for (key, value) in pr_details {
-                        println!("  {}: {}", key, value);
+                if let Some(pr_url) = pr.url.as_ref() {
+                    if let Ok(pr_details) = get_pr_details_via_gh(pr_url) {
+                        println!("\nGitHub PR Details:");
+                        for (key, value) in pr_details {
+                            println!("  {}: {}", key, value);
+                        }
                     }
                 }
             } else {

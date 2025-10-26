@@ -45,10 +45,14 @@ fn test_deserialize_activities_json() {
         // Validate artifacts
         for (j, artifact) in activity.artifacts.iter().enumerate() {
             if let Some(bash) = &artifact.bash_output {
-                assert!(!bash.command.is_empty(), 
-                    "Activity {} artifact {} has empty bash command", i, j);
-                assert!(!bash.output.is_empty(), 
-                    "Activity {} artifact {} has empty bash output", i, j);
+                if let Some(cmd) = &bash.command {
+                    assert!(!cmd.is_empty(), 
+                        "Activity {} artifact {} has empty bash command", i, j);
+                }
+                if let Some(output) = &bash.output {
+                    assert!(!output.is_empty(), 
+                        "Activity {} artifact {} has empty bash output", i, j);
+                }
                 println!("  └─ Artifact {}: bash output (exit: {:?})", j, bash.exit_code);
             }
             
@@ -120,8 +124,8 @@ fn test_bash_output_with_missing_exit_code() {
     let bash: BashOutput = serde_json::from_str(json)
         .expect("Failed to deserialize BashOutput without exitCode");
     
-    assert_eq!(bash.command, "\ncd /app\necho do setup\n");
-    assert_eq!(bash.output, "do setup");
+    assert_eq!(bash.command, Some("\ncd /app\necho do setup\n".to_string()));
+    assert_eq!(bash.output, Some("do setup".to_string()));
     assert_eq!(bash.exit_code, None, "Exit code should be None when missing");
 }
 
@@ -136,9 +140,9 @@ fn test_bash_output_with_exit_code() {
     let bash: BashOutput = serde_json::from_str(json)
         .expect("Failed to deserialize BashOutput with exitCode");
     
-    assert_eq!(bash.command, "\nmake dev");
+    assert_eq!(bash.command, Some("\nmake dev".to_string()));
     assert_eq!(bash.exit_code, Some(2));
-    assert!(bash.output.starts_with("cargo fmt"));
+    assert!(bash.output.as_ref().unwrap().starts_with("cargo fmt"));
 }
 
 #[test]

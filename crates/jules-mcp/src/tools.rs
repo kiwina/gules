@@ -164,7 +164,8 @@ pub async fn handle_create_session(
         .outputs
         .iter()
         .find_map(|output| output.pull_request.as_ref())
-        .map(|pr| pr.url.clone())
+        .and_then(|pr| pr.url.as_ref())
+        .map(|url| url.clone())
         .unwrap_or_default();
 
     Ok(CallToolResult::success(vec![
@@ -202,7 +203,8 @@ pub async fn handle_get_session(
         .outputs
         .iter()
         .find_map(|output| output.pull_request.as_ref())
-        .map(|pr| pr.url.clone())
+        .and_then(|pr| pr.url.as_ref())
+        .map(|url| url.clone())
         .unwrap_or_default();
 
     let mut summary = format!(

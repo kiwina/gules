@@ -97,7 +97,8 @@ fn test_filter_real_activities_json() {
         println!("  Activity {} has bash output:", activity.id);
         for artifact in &activity.artifacts {
             if let Some(bash) = &artifact.bash_output {
-                println!("    Command: {}", bash.command.lines().next().unwrap_or(""));
+                let cmd = bash.command.as_deref().unwrap_or("");
+                println!("    Command: {}", cmd.lines().next().unwrap_or(""));
                 println!("    Exit code: {:?}", bash.exit_code);
             }
         }
@@ -174,9 +175,11 @@ fn test_detect_bash_output_in_progress_updates() {
     for (i, artifact) in bash_activity.artifacts.iter().enumerate() {
         println!("  artifact {}: bash_output present: {}", i, artifact.bash_output.is_some());
         if let Some(bash) = &artifact.bash_output {
-            println!("    command: {}", bash.command.lines().next().unwrap_or(""));
+            let cmd = bash.command.as_deref().unwrap_or("");
+            println!("    command: {}", cmd.lines().next().unwrap_or(""));
             println!("    exit_code: {:?}", bash.exit_code);
-            println!("    output: {}", bash.output.chars().take(50).collect::<String>());
+            let out = bash.output.as_deref().unwrap_or("");
+            println!("    output: {}", out.chars().take(50).collect::<String>());
         }
     }
 

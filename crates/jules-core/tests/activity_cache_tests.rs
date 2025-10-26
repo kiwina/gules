@@ -21,7 +21,7 @@ fn create_test_activity(id: &str, session_failed: bool) -> Activity {
         session_completed: None,
         session_failed: if session_failed {
             Some(jules_rs::types::activity::SessionFailed {
-                reason: "Test failure".to_string(),
+                reason: Some("Test failure".to_string()),
             })
         } else {
             None

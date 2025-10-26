@@ -77,7 +77,7 @@ fn test_activity_type_filter_from_str() {
 fn test_activity_type_filter_matches_agent_message() {
     let mut activity = create_test_activity("1");
     activity.agent_messaged = Some(AgentMessaged {
-        agent_message: "Test message".to_string(),
+        agent_message: Some("Test message".to_string()),
     });
 
     let filter = ActivityTypeFilter::AgentMessage;
@@ -91,7 +91,7 @@ fn test_activity_type_filter_matches_agent_message() {
 fn test_activity_type_filter_matches_user_message() {
     let mut activity = create_test_activity("1");
     activity.user_messaged = Some(UserMessaged {
-        user_message: "User said something".to_string(),
+        user_message: Some("User said something".to_string()),
     });
 
     let filter = ActivityTypeFilter::UserMessage;
@@ -117,7 +117,7 @@ fn test_activity_type_filter_matches_plan() {
 fn test_activity_type_filter_matches_failed() {
     let mut activity = create_test_activity("1");
     activity.session_failed = Some(SessionFailed {
-        reason: "Test error".to_string(),
+        reason: Some("Test error".to_string()),
     });
 
     let filter = ActivityTypeFilter::Failed;
@@ -187,8 +187,8 @@ fn test_activity_with_bash_output() {
         change_set: None,
         media: None,
         bash_output: Some(BashOutput {
-            command: "cargo test".to_string(),
-            output: "test failed".to_string(),
+            command: Some("cargo test".to_string()),
+            output: Some("test failed".to_string()),
             exit_code: Some(1),
         }),
     });
@@ -205,14 +205,14 @@ fn test_activity_content_extraction() {
     // Test agent message content
     let mut activity = create_test_activity("1");
     activity.agent_messaged = Some(AgentMessaged {
-        agent_message: "Agent says hello".to_string(),
+        agent_message: Some("Agent says hello".to_string()),
     });
     assert_eq!(activity.content(), Some("Agent says hello".to_string()));
 
     // Test user message content
     let mut activity = create_test_activity("2");
     activity.user_messaged = Some(UserMessaged {
-        user_message: "User says hi".to_string(),
+        user_message: Some("User says hi".to_string()),
     });
     assert_eq!(activity.content(), Some("User says hi".to_string()));
 
@@ -230,11 +230,11 @@ fn test_activity_content_extraction() {
     // Test failed content
     let mut activity = create_test_activity("4");
     activity.session_failed = Some(SessionFailed {
-        reason: "Build failed".to_string(),
+        reason: Some("Build failed".to_string()),
     });
     assert_eq!(
         activity.content(),
-        Some("Session failed: Build failed".to_string())
+        Some("Build failed".to_string())
     );
 
     // Test activity with no content
@@ -247,13 +247,13 @@ fn test_activity_type_string() {
     let mut activity = create_test_activity("1");
 
     activity.agent_messaged = Some(AgentMessaged {
-        agent_message: "test".to_string(),
+        agent_message: Some("test".to_string()),
     });
     assert_eq!(activity.activity_type(), "Agent Messaged");
 
     let mut activity = create_test_activity("2");
     activity.user_messaged = Some(UserMessaged {
-        user_message: "test".to_string(),
+        user_message: Some("test".to_string()),
     });
     assert_eq!(activity.activity_type(), "User Messaged");
 
@@ -269,7 +269,7 @@ fn test_activity_type_string() {
 
     let mut activity = create_test_activity("4");
     activity.session_failed = Some(SessionFailed {
-        reason: "error".to_string(),
+        reason: Some("error".to_string()),
     });
     assert_eq!(activity.activity_type(), "Session Failed");
 
@@ -284,17 +284,17 @@ fn test_activity_type_string() {
 fn test_multiple_type_filters() {
     let mut agent_activity = create_test_activity("1");
     agent_activity.agent_messaged = Some(AgentMessaged {
-        agent_message: "agent".to_string(),
+        agent_message: Some("agent".to_string()),
     });
 
     let mut user_activity = create_test_activity("2");
     user_activity.user_messaged = Some(UserMessaged {
-        user_message: "user".to_string(),
+        user_message: Some("user".to_string()),
     });
 
     let mut failed_activity = create_test_activity("3");
     failed_activity.session_failed = Some(SessionFailed {
-        reason: "error".to_string(),
+        reason: Some("error".to_string()),
     });
 
     // Create filters
@@ -318,8 +318,8 @@ fn test_bash_output_filtering_logic() {
         change_set: None,
         media: None,
         bash_output: Some(BashOutput {
-            command: "npm test".to_string(),
-            output: "FAIL: 1 test failed".to_string(),
+            command: Some("npm test".to_string()),
+            output: Some("FAIL: 1 test failed".to_string()),
             exit_code: Some(1),
         }),
     });
